@@ -11,5 +11,5 @@
     "start": "react-scripts start",
     "build": "react-scripts build"
   },
-  "proxy": "http://backend:5000"
+  "proxy": "http://backend:8000"
 }
