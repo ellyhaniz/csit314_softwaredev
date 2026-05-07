@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS fund_raising_activities (
   view_count INT DEFAULT 0,
   shortlist_count INT DEFAULT 0,
   impact_score NUMERIC(3,2) DEFAULT 0,
+  is_spike_flagged BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
