@@ -1,0 +1,110 @@
+from app.config.db import get_db
+
+SPIKE_THRESHOLD = 5
+FLAG_THRESHOLD = 5000.00
+
+
+class DonationRepository:
+    @classmethod
+    def get_by_fra(cls, fra_id: int):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT * FROM donations WHERE fra_id = %s ORDER BY created_at DESC",
+                (fra_id,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+
+    @classmethod
+    def get_total_by_fra(cls, fra_id: int):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT COALESCE(SUM(amount), 0) AS total FROM donations "
+                "WHERE fra_id = %s AND status = 'completed'",
+                (fra_id,),
+            )
+            return float(cur.fetchone()["total"])
+
+    @classmethod
+    def get_count_by_fra(cls, fra_id: int):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT COUNT(*) AS count FROM donations "
+                "WHERE fra_id = %s AND status = 'completed'",
+                (fra_id,),
+            )
+            return cur.fetchone()["count"]
+
+    @classmethod
+    def get_by_status(cls, status: str):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT * FROM donations WHERE status = %s ORDER BY created_at DESC",
+                (status,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+
+    @classmethod
+    def update_status(cls, donation_id: int, status: str, flagged_reason: str = None):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE donations SET status = %s, flagged_reason = %s "
+                "WHERE id = %s RETURNING *",
+                (status, flagged_reason, donation_id),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+    @classmethod
+    def get_hourly_count(cls, fra_id: int):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT COUNT(*) AS count FROM donations "
+                "WHERE fra_id = %s AND created_at >= NOW() - INTERVAL '1 hour'",
+                (fra_id,),
+            )
+            return cur.fetchone()["count"]
+
+    @classmethod
+    def get_active_fra_ids(cls):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT DISTINCT fra_id FROM donations "
+                "WHERE created_at >= NOW() - INTERVAL '1 hour'"
+            )
+            return [r["fra_id"] for r in cur.fetchall()]
+
+    @classmethod
+    def get_total_donations(cls, period: str):
+        with get_db() as conn:
+            cur = conn.cursor()
+            intervals = {"daily": "1 day", "weekly": "7 days", "monthly": "30 days"}
+            interval = intervals.get(period, "30 days")
+            cur.execute(
+                f"SELECT COALESCE(SUM(amount), 0) AS total FROM donations "
+                f"WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '{interval}'"
+            )
+            return float(cur.fetchone()["total"])
+
+    @classmethod
+    def get_unique_donors_by_fra(cls, fra_id: int):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT DISTINCT u.id, u.full_name, u.email, d.is_anonymous,
+                       d.amount, d.message, d.created_at
+                FROM donations d
+                JOIN users u ON u.id = d.donor_id
+                WHERE d.fra_id = %s AND d.status = 'completed'
+                ORDER BY d.created_at DESC
+                """,
+                (fra_id,),
+            )
+            return [dict(r) for r in cur.fetchall()]
