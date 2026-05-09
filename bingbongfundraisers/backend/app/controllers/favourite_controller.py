@@ -1,6 +1,5 @@
 from app.services.favourite_service import FavouriteService
 
------
 class FavouritesController:
     @staticmethod
     def save_fra(user_id: int, fra_id: int):
