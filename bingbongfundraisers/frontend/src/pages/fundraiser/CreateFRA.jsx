@@ -89,7 +89,7 @@ export default function CreateFRA() {
 
   useEffect(() => {
     getCategories()
-      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .then((data) => setCategories(Array.isArray(data) ? data : data?.categories ?? []))
       .catch(() => setCategories([]));
   }, []);
 
