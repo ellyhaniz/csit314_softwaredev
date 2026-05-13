@@ -24,7 +24,9 @@ export default function SearchMatch() {
   const [searched, setSearched] = useState(false);
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => setCategories([]));
+    getCategories()
+      .then((data) => setCategories(Array.isArray(data) ? data : data?.categories ?? []))
+      .catch(() => setCategories([]));
   }, []);
 
   useEffect(() => {

@@ -19,7 +19,9 @@ export default function Browse() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => setCategories([]));
+    getCategories()
+      .then((data) => setCategories(Array.isArray(data) ? data : data?.categories ?? []))
+      .catch(() => setCategories([]));
   }, []);
 
   useEffect(() => {
