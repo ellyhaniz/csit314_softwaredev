@@ -23,6 +23,8 @@ export const createFRA = (data) =>
 
 export const getFRA = (fraId) => request(`/api/fra/${fraId}`);
 
+export const getMyFRAs = (fundraiserId) => request(`/api/fra/fundraiser/${fundraiserId}`);
+
 export const checkExpiredFRAs = () =>
   request('/api/fra/check-expired', { method: 'POST' });
 

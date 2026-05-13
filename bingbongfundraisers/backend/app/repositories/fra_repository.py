@@ -59,6 +59,16 @@ class FRARepository:
             return [dict(r) for r in cur.fetchall()]
 
     @classmethod
+    def get_by_fund_raiser_id(cls, fund_raiser_id: int):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT * FROM fund_raising_activities WHERE fund_raiser_id = %s ORDER BY created_at DESC",
+                (fund_raiser_id,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+
+    @classmethod
     def update_status(cls, fra_id: int, status: str):
         with get_db() as conn:
             cur = conn.cursor()

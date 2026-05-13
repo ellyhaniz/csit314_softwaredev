@@ -10,6 +10,10 @@ class CreateFRAController:
     def get_fra_detail(fra_id: int):
         return FRAService.get_fra_detail(fra_id)
 
+    @staticmethod
+    def get_by_fund_raiser(fund_raiser_id: int):
+        return FRAService.get_by_fund_raiser(fund_raiser_id)
+
 
 class EndDateController:
     @staticmethod

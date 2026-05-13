@@ -12,7 +12,7 @@ export default function Home() {
   const [isTrending, setIsTrending] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && user.user_type === 'donee') {
       getFavourites(user.id)
         .then((data) => {
           const ids = Array.isArray(data) ? data.map((f) => f.fra_id ?? f.id) : [];
@@ -23,24 +23,30 @@ export default function Home() {
   }, [user]);
 
   useEffect(() => {
-    if (!user) return;
-    getRecommendations(user.id)
-      .then((data) => {
-        const list = Array.isArray(data) ? data : [];
-        if (list.length === 0) {
-          return getTrending().then((t) => {
-            setFras(Array.isArray(t) ? t : []);
-            setIsTrending(true);
-          });
-        }
-        setFras(list);
-      })
-      .catch(() => {
-        getTrending()
-          .then((t) => { setFras(Array.isArray(t) ? t : []); setIsTrending(true); })
-          .catch(() => setFras([]));
-      })
-      .finally(() => setLoading(false));
+    if (user && user.user_type === 'donee') {
+      getRecommendations(user.id)
+        .then((data) => {
+          const list = Array.isArray(data) ? data : [];
+          if (list.length === 0) {
+            return getTrending().then((t) => {
+              setFras(Array.isArray(t) ? t : []);
+              setIsTrending(true);
+            });
+          }
+          setFras(list);
+        })
+        .catch(() => {
+          getTrending()
+            .then((t) => { setFras(Array.isArray(t) ? t : []); setIsTrending(true); })
+            .catch(() => setFras([]));
+        })
+        .finally(() => setLoading(false));
+    } else {
+      getTrending()
+        .then((t) => { setFras(Array.isArray(t) ? t : []); setIsTrending(true); })
+        .catch(() => setFras([]))
+        .finally(() => setLoading(false));
+    }
   }, [user]);
 
   async function toggleFavourite(fraId) {

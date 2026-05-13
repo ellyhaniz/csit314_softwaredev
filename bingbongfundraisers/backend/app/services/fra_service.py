@@ -25,6 +25,10 @@ class FRAService:
             raise HTTPException(status_code=404, detail="FRA not found")
         return fra
 
+    @staticmethod
+    def get_by_fund_raiser(fund_raiser_id: int):
+        return FRARepository.get_by_fund_raiser_id(fund_raiser_id)
+
     # FR-02: End Date / Auto-Close
     @staticmethod
     def check_and_close_expired():

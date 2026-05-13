@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createFRA, getCategories } from '../../lib/api';
-import Navbar from '../../components/Navbar';
+import FundraiserHeader from '../../components/FundraiserHeader';
 
 const STEP_LABELS = [
   'Campaign details',
@@ -67,6 +67,8 @@ export default function CreateFRA() {
   const [confirmed, setConfirmed] = useState(false);
   const [photo, setPhoto] = useState(null);
   const photoInputRef = useRef(null);
+  const [docs, setDocs] = useState({});
+  const docInputRefs = useRef({});
 
   const [details, setDetails] = useState({
     title: '',
@@ -111,16 +113,25 @@ export default function CreateFRA() {
     setError('');
     setSubmitting(true);
     try {
-      await createFRA({
+      const fra = await createFRA({
         title: details.title,
         category_id: details.category_id || null,
         target_amount: Number(details.target_amount),
         location_text: details.location_text,
-        start_date: details.start_date || null,
         end_date: details.end_date,
         description: details.description,
         fund_raiser_id: user?.id,
       });
+      if (photo && fra?.id) {
+        await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            localStorage.setItem(`fra_img_${fra.id}`, reader.result);
+            resolve();
+          };
+          reader.readAsDataURL(photo);
+        });
+      }
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
@@ -131,7 +142,7 @@ export default function CreateFRA() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <FundraiserHeader />
       <div className="max-w-2xl mx-auto px-6 py-8">
         <Link to="/dashboard" className="text-sm text-gray-500 hover:text-gray-900 mb-4 inline-block">
           ← My campaigns
@@ -389,9 +400,29 @@ export default function CreateFRA() {
                 <p className="text-sm font-semibold text-gray-900 mb-3">REQUIRED</p>
                 {['Beneficiary ID (NRIC/Passport)', 'Your own ID (NRIC/Passport)'].map((doc) => (
                   <div key={doc} className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 mb-2">
-                    <span className="text-sm text-gray-700">✓ {doc}</span>
-                    <button className="text-xs bg-gray-900 text-white px-3 py-1 rounded hover:bg-gray-700 transition-colors">
-                      Upload
+                    <span className="text-sm text-gray-700">
+                      {docs[doc] ? `✓ ${docs[doc].name}` : doc}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      ref={(el) => { docInputRefs.current[doc] = el; }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) setDocs((d) => ({ ...d, [doc]: file }));
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => docInputRefs.current[doc]?.click()}
+                      className={`text-xs px-3 py-1 rounded transition-colors ${
+                        docs[doc]
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-900 text-white hover:bg-gray-700'
+                      }`}
+                    >
+                      {docs[doc] ? 'Uploaded ✓' : 'Upload'}
                     </button>
                   </div>
                 ))}
@@ -401,9 +432,29 @@ export default function CreateFRA() {
                 <p className="text-sm font-medium text-gray-700 mb-3">OPTIONAL — increases impact score</p>
                 {['Medical report', 'Hospital bill', 'Supportive photos', 'Letter from authority'].map((doc) => (
                   <div key={doc} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                    <span className="text-sm text-gray-500">{doc}</span>
-                    <button className="text-xs border border-gray-300 px-3 py-1 rounded hover:border-gray-500 transition-colors">
-                      Upload
+                    <span className="text-sm text-gray-500">
+                      {docs[doc] ? docs[doc].name : doc}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      ref={(el) => { docInputRefs.current[doc] = el; }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) setDocs((d) => ({ ...d, [doc]: file }));
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => docInputRefs.current[doc]?.click()}
+                      className={`text-xs px-3 py-1 rounded transition-colors ${
+                        docs[doc]
+                          ? 'border border-green-500 text-green-700'
+                          : 'border border-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      {docs[doc] ? 'Uploaded ✓' : 'Upload'}
                     </button>
                   </div>
                 ))}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { loginUser } from '../../lib/api';
+import { loginUser, checkExpiredFRAs } from '../../lib/api';
 
 const REDIRECT = {
   fund_raiser: '/dashboard',
@@ -25,6 +25,7 @@ export default function Login() {
     try {
       const user = await loginUser(email, password);
       login(user);
+      checkExpiredFRAs().catch(() => null);
       navigate(REDIRECT[user.user_type] || '/browse');
     } catch (err) {
       setError(err.message);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { getFRA, postCampaignUpdate } from '../../lib/api';
-import Navbar from '../../components/Navbar';
+import FundraiserHeader from '../../components/FundraiserHeader';
 
 export default function PostUpdate() {
   const { id } = useParams();
@@ -45,7 +45,7 @@ export default function PostUpdate() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <FundraiserHeader />
       <div className="max-w-2xl mx-auto px-6 py-8">
         <Link to="/dashboard" className="text-sm text-gray-500 hover:text-gray-900 mb-4 inline-block">
           ← My campaigns
