@@ -205,3 +205,12 @@ INSERT INTO categories (name, slug) VALUES
   ('Tech & Innovation', 'tech-innovation'),
   ('Other', 'other')
 ON CONFLICT (slug) DO NOTHING;
+
+-- SEED: TEST ACCOUNTS (all roles)
+
+INSERT INTO users (email, password_hash, user_type, full_name, status, violation_count) VALUES
+  ('donee@sim.com',                  encode(sha256('donee'::bytea), 'hex'),                  'donee',                'Donee User',                'active', 0),
+  ('fundraiser@sim.com',             encode(sha256('fundraiser'::bytea), 'hex'),             'fund_raiser',          'Fund Raiser User',          'active', 0),
+  ('admin@sim.com',                  encode(sha256('admin'::bytea), 'hex'),                  'user_admin',           'Admin',                     'active', 0),
+  ('platformmanagement@sim.com',     encode(sha256('platformmanagement'::bytea), 'hex'),     'platform_management',  'Platform Management',       'active', 0)
+ON CONFLICT (email) DO NOTHING;
