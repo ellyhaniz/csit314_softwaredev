@@ -5,7 +5,6 @@ CREATE TYPE user_status AS ENUM ('active', 'suspended', 'banned');
 CREATE TYPE fra_status AS ENUM ('draft', 'active', 'completed', 'expired', 'cancelled');
 CREATE TYPE donation_status AS ENUM ('pending', 'completed', 'flagged', 'refunded');
 CREATE TYPE report_status AS ENUM ('pending', 'reviewed', 'dismissed', 'actioned');
-CREATE TYPE report_period AS ENUM ('daily', 'weekly', 'monthly');
 
 -- USERS
 
@@ -165,7 +164,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 
 CREATE TABLE IF NOT EXISTS platform_reports (
   id SERIAL PRIMARY KEY,
-  period report_period NOT NULL,
+  period VARCHAR(50) NOT NULL,
   report_date DATE NOT NULL,
   new_fras INT DEFAULT 0,
   total_donations NUMERIC(12,2) DEFAULT 0,

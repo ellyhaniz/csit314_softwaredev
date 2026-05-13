@@ -7,9 +7,9 @@ import { getReportedCampaigns, actionReport } from '../../lib/api';
 const TABS = ['Pending', 'Reviewed', 'Dismissed', 'Actioned'];
 
 const ACTION_OPTIONS = [
-  { value: 'warn', label: 'Warn fundraiser' },
-  { value: 'suspend', label: 'Suspend campaign' },
-  { value: 'remove', label: 'Remove campaign' },
+  { value: 'reviewed', fraAction: null, label: 'Warn fundraiser' },
+  { value: 'actioned', fraAction: 'suspended', label: 'Suspend campaign' },
+  { value: 'actioned', fraAction: 'cancelled', label: 'Remove campaign' },
 ];
 
 export default function ReportedCampaigns() {
@@ -27,7 +27,7 @@ export default function ReportedCampaigns() {
   function load() {
     setLoading(true);
     getReportedCampaigns()
-      .then((data) => setReports(Array.isArray(data) ? data : []))
+      .then((data) => setReports(Array.isArray(data) ? data : (data.reports ?? [])))
       .catch(() => setReports([]))
       .finally(() => setLoading(false));
   }
@@ -40,15 +40,15 @@ export default function ReportedCampaigns() {
   });
 
   async function handleAction(reportId) {
-    const action = selectedAction[reportId];
-    if (!action) return;
+    const selected = selectedAction[reportId];
+    if (!selected) return;
     setActioning(reportId);
     setError('');
     try {
       await actionReport(reportId, {
-        action,
+        action: selected.value,
         reviewed_by: user?.id,
-        fra_action: action,
+        fra_action: selected.fraAction,
       });
       setExpandedId(null);
       load();
@@ -64,7 +64,7 @@ export default function ReportedCampaigns() {
     setError('');
     try {
       await actionReport(reportId, {
-        action: 'dismiss',
+        action: 'dismissed',
         reviewed_by: user?.id,
         fra_action: null,
       });
@@ -192,25 +192,25 @@ export default function ReportedCampaigns() {
                           <div className="flex items-center gap-3 pt-3">
                             <span className="text-sm text-gray-700 font-medium">Action:</span>
                             <div className="flex gap-2">
-                              {ACTION_OPTIONS.map(({ value, label }) => (
+                              {ACTION_OPTIONS.map((opt) => (
                                 <button
-                                  key={value}
+                                  key={opt.label}
                                   onClick={() =>
-                                    setSelectedAction((prev) => ({ ...prev, [r.id]: value }))
+                                    setSelectedAction((prev) => ({ ...prev, [r.id]: opt }))
                                   }
                                   className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
-                                    selectedAction[r.id] === value
+                                    selectedAction[r.id]?.label === opt.label
                                       ? 'bg-gray-900 text-white border-gray-900'
                                       : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
                                   }`}
                                 >
-                                  {label}
+                                  {opt.label}
                                 </button>
                               ))}
                             </div>
                             <button
                               onClick={() => handleAction(r.id)}
-                              disabled={!selectedAction[r.id] || actioning === r.id}
+                              disabled={!selectedAction[r.id]?.label || actioning === r.id}
                               className="ml-2 bg-red-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-red-700 transition-colors disabled:opacity-40"
                             >
                               {actioning === r.id ? 'Processing…' : 'Confirm'}
