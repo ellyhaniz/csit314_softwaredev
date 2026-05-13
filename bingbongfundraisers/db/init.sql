@@ -258,3 +258,21 @@ INSERT INTO reported_campaigns (fra_id, reported_by, reason, status) VALUES
   (3, 1, 'Images appear fake. Profile picture looks like a stock photo.', 'pending'),
   (2, 2, 'Cannot verify the beneficiary information provided.', 'pending')
 ON CONFLICT DO NOTHING;
+
+-- SEED: FLAGGED USER (violation_count=3 triggers UA-03 violations view)
+-- fund_raiser_id=3 = fundraiser@sim.com
+
+UPDATE users SET violation_count = 3 WHERE email = 'fundraiser@sim.com';
+
+INSERT INTO user_violations (user_id, type, description, actioned_by) VALUES
+  (3, 'misleading_content',  'Campaign description contained unverifiable medical claims.', 4),
+  (3, 'fake_documents',      'Uploaded documents could not be verified by admin.', 4),
+  (3, 'repeated_complaints', 'Multiple donor complaints received about this campaign.', 4)
+ON CONFLICT DO NOTHING;
+
+-- SEED: FAVOURITES (donee@sim.com favourites FRA 1 and FRA 4)
+
+INSERT INTO favorites (user_id, fra_id) VALUES
+  (2, 1),
+  (2, 4)
+ON CONFLICT DO NOTHING;
