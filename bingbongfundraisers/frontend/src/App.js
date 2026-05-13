@@ -83,7 +83,7 @@ export default function App() {
         </RequireAuth>
       } />
       <Route path="/fra/:id/thank-donors" element={
-        <RequireAuth allowedTypes={['fund_raiser']}>
+        <RequireAuth allowedTypes={['fund_raiser', 'donee']}>
           <ThankDonors />
         </RequireAuth>
       } />

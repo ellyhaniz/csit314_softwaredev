@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getFRA, getDonorsForFRA, sendThankYou } from '../../lib/api';
 import FundraiserHeader from '../../components/FundraiserHeader';
+import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 
 function formatSGD(n) {
@@ -23,6 +24,7 @@ const TABS = ['All', 'Not yet thanked', 'Already thanked'];
 export default function ThankDonors() {
   const { id } = useParams();
   const { user } = useAuth();
+  const isDonee = user?.user_type === 'donee';
   const [fra, setFra] = useState(null);
   const [donors, setDonors] = useState([]);
   const [messages, setMessages] = useState({});
@@ -101,7 +103,7 @@ export default function ThankDonors() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <FundraiserHeader />
+        {isDonee ? <Navbar /> : <FundraiserHeader />}
         <div className="max-w-5xl mx-auto px-6 py-8">
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -115,10 +117,13 @@ export default function ThankDonors() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <FundraiserHeader />
+      {isDonee ? <Navbar /> : <FundraiserHeader />}
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-          <Link to="/dashboard" className="hover:text-gray-900 transition-colors">← My campaigns</Link>
+          {isDonee
+            ? <Link to={`/fra/${id}`} className="hover:text-gray-900 transition-colors">← Back to campaign</Link>
+            : <Link to="/dashboard" className="hover:text-gray-900 transition-colors">← My campaigns</Link>
+          }
         </div>
 
         <div className="flex items-start justify-between mb-6">

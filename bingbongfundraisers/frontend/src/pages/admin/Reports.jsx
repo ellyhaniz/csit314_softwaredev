@@ -35,6 +35,25 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  function applyPreset(preset) {
+    const today = new Date();
+    const fmt = (d) => d.toISOString().slice(0, 10);
+    if (preset === 'daily') {
+      setStartDate(fmt(today));
+      setEndDate(fmt(today));
+    } else if (preset === 'weekly') {
+      const start = new Date(today);
+      start.setDate(today.getDate() - 6);
+      setStartDate(fmt(start));
+      setEndDate(fmt(today));
+    } else if (preset === 'monthly') {
+      const start = new Date(today);
+      start.setDate(today.getDate() - 29);
+      setStartDate(fmt(start));
+      setEndDate(fmt(today));
+    }
+  }
+
   async function handleGenerate(e) {
     e.preventDefault();
     if (!startDate || !endDate) { setError('Please select both start and end dates.'); return; }
@@ -74,6 +93,25 @@ export default function Reports() {
           )}
 
           <form onSubmit={handleGenerate} className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <p className="text-sm font-medium text-gray-700 mb-3">Quick select</p>
+            <div className="flex gap-3 mb-6">
+              {[
+                { label: 'Daily', value: 'daily', sub: 'Today' },
+                { label: 'Weekly', value: 'weekly', sub: 'Last 7 days' },
+                { label: 'Monthly', value: 'monthly', sub: 'Last 30 days' },
+              ].map(({ label, value, sub }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => applyPreset(value)}
+                  className="border border-gray-200 rounded-lg px-5 py-3 text-left hover:border-gray-400 transition-colors"
+                >
+                  <p className="text-sm font-medium text-gray-900">{label}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+                </button>
+              ))}
+            </div>
+
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Start date</label>

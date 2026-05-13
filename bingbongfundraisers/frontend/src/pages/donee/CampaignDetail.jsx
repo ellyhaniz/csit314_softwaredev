@@ -183,6 +183,7 @@ export default function CampaignDetail() {
             updates={updates}
             imgSrc={imgSrc}
             onDonate={isDonor ? () => navigate(`/fra/${id}/donate`) : null}
+            onThankDonors={isDonee ? () => navigate(`/fra/${id}/thank-donors`) : null}
           />
         )}
       </div>
@@ -300,7 +301,7 @@ function ClosedView({ fra, pct, donorCount, updates, imgSrc }) {
   );
 }
 
-function ActiveView({ fra, pct, donorCount, avgDonation, impactScore, donors, updates, imgSrc, onDonate }) {
+function ActiveView({ fra, pct, donorCount, avgDonation, impactScore, donors, updates, imgSrc, onDonate, onThankDonors }) {
   return (
     <div className="space-y-6">
       <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -336,6 +337,14 @@ function ActiveView({ fra, pct, donorCount, avgDonation, impactScore, donors, up
             className="mt-4 w-full bg-indigo-700 text-white py-2.5 rounded text-sm font-medium hover:bg-indigo-800 transition-colors"
           >
             Donate now
+          </button>
+        )}
+        {onThankDonors && (
+          <button
+            onClick={onThankDonors}
+            className="mt-3 w-full border border-gray-300 text-gray-700 py-2.5 rounded text-sm font-medium hover:border-gray-500 transition-colors"
+          >
+            Thank donors
           </button>
         )}
       </div>
