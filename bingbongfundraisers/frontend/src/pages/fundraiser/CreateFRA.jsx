@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createFRA, getCategories } from '../../lib/api';
@@ -65,6 +65,8 @@ export default function CreateFRA() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [photo, setPhoto] = useState(null);
+  const photoInputRef = useRef(null);
 
   const [details, setDetails] = useState({
     title: '',
@@ -257,8 +259,27 @@ export default function CreateFRA() {
                 />
               </div>
 
-              <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center text-gray-400 text-sm cursor-pointer hover:border-gray-400 transition-colors">
-                📷 Attach photo (optional)
+              <div>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file && file.size <= 5 * 1024 * 1024) setPhoto(file);
+                  }}
+                />
+                <div
+                  onClick={() => photoInputRef.current.click()}
+                  className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center text-gray-400 text-sm cursor-pointer hover:border-gray-400 transition-colors"
+                >
+                  {photo ? (
+                    <span className="text-gray-700">📷 {photo.name}</span>
+                  ) : (
+                    <span>📷 Attach photo (optional) — JPEG, PNG, WebP up to 5 MB</span>
+                  )}
+                </div>
               </div>
             </div>
           )}
