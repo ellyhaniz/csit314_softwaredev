@@ -174,6 +174,16 @@ CREATE TABLE IF NOT EXISTS platform_reports (
   generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- NOTIFICATIONS
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id),
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- INDEXES
 
 CREATE INDEX IF NOT EXISTS idx_fra_status ON fund_raising_activities(status);

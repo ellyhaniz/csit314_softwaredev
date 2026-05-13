@@ -96,6 +96,11 @@ export const generateReport = (startDate, endDate, generatedBy) =>
 
 export const getReport = (reportId) => request(`/api/reports/${reportId}`);
 
+// Notifications
+export const getNotifications = (userId) => request(`/api/notifications/${userId}`);
+export const markAllRead = (userId) =>
+  request(`/api/notifications/${userId}/read-all`, { method: 'POST' });
+
 // Moderation
 export const reportCampaign = (data) =>
   request('/api/moderation/reported', { method: 'POST', body: JSON.stringify(data) });

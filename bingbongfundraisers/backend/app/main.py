@@ -7,6 +7,7 @@ from app.routes.favourite_routes import router as favourite_router
 from app.routes.fra_routes import router as fra_router
 from app.routes.hello_routes import router as hello_router
 from app.routes.moderation_routes import router as moderation_router
+from app.routes.notification_routes import router as notification_router
 from app.routes.report_routes import router as report_router
 from app.routes.search_routes import router as search_router
 from app.routes.thank_you_routes import router as thank_you_router
@@ -23,3 +24,4 @@ app.include_router(thank_you_router)
 app.include_router(category_router)
 app.include_router(report_router)
 app.include_router(moderation_router)
+app.include_router(notification_router)

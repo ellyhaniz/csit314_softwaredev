@@ -6,6 +6,7 @@ from app.repositories.donation_repository import (
     SPIKE_THRESHOLD,
 )
 from app.repositories.fra_repository import FRARepository
+from app.repositories.notification_repository import NotificationRepository
 from app.repositories.reported_campaign_repository import ReportedCampaignRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.user_violation_repository import UserViolationRepository
@@ -51,6 +52,23 @@ class ModerationService:
         updated_fra = None
         if action == "actioned" and fra_action in {"cancelled", "suspended"}:
             updated_fra = FRARepository.update_status(report["fra_id"], fra_action)
+
+        fra = FRARepository.get_by_id(report["fra_id"])
+        fra_title = fra["title"] if fra else "a campaign"
+        reporter_id = report["reported_by"]
+
+        if action == "dismissed":
+            msg = f"Your report on '{fra_title}' was reviewed. No action was taken."
+        elif action == "reviewed":
+            msg = f"Your report on '{fra_title}' was reviewed. The fundraiser has been warned."
+        elif action == "actioned" and fra_action == "suspended":
+            msg = f"Your report on '{fra_title}' was reviewed. The campaign has been suspended."
+        elif action == "actioned" and fra_action == "cancelled":
+            msg = f"Your report on '{fra_title}' was reviewed. The campaign has been removed."
+        else:
+            msg = f"Your report on '{fra_title}' has been reviewed."
+
+        NotificationRepository.create(reporter_id, msg)
 
         return {"message": "Report actioned", "report": updated_report, "fra": updated_fra}
 
