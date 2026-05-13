@@ -6,6 +6,24 @@ FLAG_THRESHOLD = 5000.00
 
 class DonationRepository:
     @classmethod
+    def create(cls, data: dict):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO donations (fra_id, donor_id, amount, message, is_anonymous, status)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING *
+                """,
+                (
+                    data["fra_id"], data["donor_id"], data["amount"],
+                    data.get("message"), data.get("is_anonymous", False),
+                    data.get("status", "completed"),
+                ),
+            )
+            return dict(cur.fetchone())
+
+    @classmethod
     def get_by_fra(cls, fra_id: int):
         with get_db() as conn:
             cur = conn.cursor()
@@ -81,14 +99,13 @@ class DonationRepository:
             return [r["fra_id"] for r in cur.fetchall()]
 
     @classmethod
-    def get_total_donations(cls, period: str):
+    def get_total_donations(cls, start_date: str, end_date: str):
         with get_db() as conn:
             cur = conn.cursor()
-            intervals = {"daily": "1 day", "weekly": "7 days", "monthly": "30 days"}
-            interval = intervals.get(period, "30 days")
             cur.execute(
-                f"SELECT COALESCE(SUM(amount), 0) AS total FROM donations "
-                f"WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '{interval}'"
+                "SELECT COALESCE(SUM(amount), 0) AS total FROM donations "
+                "WHERE status = 'completed' AND DATE(created_at) BETWEEN %s AND %s",
+                (start_date, end_date),
             )
             return float(cur.fetchone()["total"])
 

@@ -17,6 +17,10 @@ export const loginUser = (email, password) =>
 export const registerUser = (data) =>
   request('/api/auth/register', { method: 'POST', body: JSON.stringify(data) });
 
+// Donations
+export const donateToCampaign = (data) =>
+  request('/api/donations', { method: 'POST', body: JSON.stringify(data) });
+
 // FRA
 export const createFRA = (data) =>
   request('/api/fra', { method: 'POST', body: JSON.stringify(data) });
@@ -84,15 +88,18 @@ export const deleteCategory = (catId) =>
   request(`/api/categories/${catId}`, { method: 'DELETE' });
 
 // Reports
-export const generateReport = (period, generatedBy) =>
+export const generateReport = (startDate, endDate, generatedBy) =>
   request('/api/reports', {
     method: 'POST',
-    body: JSON.stringify({ period, generated_by: generatedBy }),
+    body: JSON.stringify({ start_date: startDate, end_date: endDate, generated_by: generatedBy }),
   });
 
 export const getReport = (reportId) => request(`/api/reports/${reportId}`);
 
 // Moderation
+export const reportCampaign = (data) =>
+  request('/api/moderation/reported', { method: 'POST', body: JSON.stringify(data) });
+
 export const getReportedCampaigns = () => request('/api/moderation/reported');
 
 export const actionReport = (reportId, data) =>

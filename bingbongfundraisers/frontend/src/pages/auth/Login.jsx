@@ -5,7 +5,7 @@ import { loginUser, checkExpiredFRAs } from '../../lib/api';
 
 const REDIRECT = {
   fund_raiser: '/dashboard',
-  donor: '/',
+  donor: '/browse',
   donee: '/browse',
   user_admin: '/admin/violations',
   platform_management: '/admin/reports',

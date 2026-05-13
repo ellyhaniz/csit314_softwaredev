@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AdminSidebar from '../../components/AdminSidebar';
 import { getSpikeAlerts, dismissSpike } from '../../lib/api';
@@ -16,7 +17,9 @@ function timeAgo(dateStr) {
 }
 
 export default function SpikeAlerts() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  function handleLogout() { logout(); navigate('/login'); }
   const [tab, setTab] = useState('Active');
   const [spikes, setSpikes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,8 +59,11 @@ export default function SpikeAlerts() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-gray-900 text-white h-14 flex items-center justify-between px-6">
-        <span className="font-semibold">Donate today · Admin</span>
-        <span className="text-gray-300 text-sm">{user?.email}</span>
+        <span className="font-semibold">Donate today · User Admin</span>
+        <div className="flex items-center gap-4">
+          <span className="text-gray-300 text-sm">{user?.email}</span>
+          <button onClick={handleLogout} className="text-gray-300 text-sm hover:text-white transition-colors">Log out</button>
+        </div>
       </div>
 
       <div className="flex">

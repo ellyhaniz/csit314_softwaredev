@@ -2,14 +2,12 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const PM_LINKS = [
-  { label: 'Overview', to: '/admin/reports' },
+  { label: 'Reports', to: '/admin/reports' },
   { label: 'Campaigns', to: '/admin/reported' },
   { label: 'Categories', to: '/admin/categories' },
-  { label: 'Reports', to: '/admin/reports' },
 ];
 
 const UA_LINKS = [
-  { label: 'Overview', to: '/admin/violations' },
   { label: 'Violations', to: '/admin/violations' },
   { label: 'Donations', to: '/admin/donations' },
   { label: 'Spikes', to: '/admin/spikes' },

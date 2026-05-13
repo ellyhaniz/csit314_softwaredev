@@ -10,6 +10,7 @@ import PostUpdate from './pages/fundraiser/PostUpdate';
 
 import Browse from './pages/donee/Browse';
 import CampaignDetail from './pages/donee/CampaignDetail';
+import Donate from './pages/donee/Donate';
 import ThankDonors from './pages/donee/ThankDonors';
 import Favourites from './pages/donee/Favourites';
 
@@ -35,6 +36,7 @@ function RequireAuth({ children, allowedTypes }) {
 function HomeRoute() {
   const { user } = useAuth();
   if (user?.user_type === 'fund_raiser') return <Navigate to="/dashboard" replace />;
+  if (user?.user_type === 'donor') return <Navigate to="/browse" replace />;
   if (user?.user_type === 'donee') return <Navigate to="/browse" replace />;
   if (user?.user_type === 'user_admin') return <Navigate to="/admin/violations" replace />;
   if (user?.user_type === 'platform_management') return <Navigate to="/admin/reports" replace />;
@@ -49,6 +51,11 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/browse" element={<Browse />} />
       <Route path="/fra/:id" element={<CampaignDetail />} />
+      <Route path="/fra/:id/donate" element={
+        <RequireAuth allowedTypes={['donor']}>
+          <Donate />
+        </RequireAuth>
+      } />
       <Route path="/search" element={<SearchMatch />} />
 
       {/* Public home — redirects logged-in non-donee users to their page */}

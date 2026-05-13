@@ -20,7 +20,7 @@ class FavouriteRepository:
             cur = conn.cursor()
             cur.execute(
                 """
-                SELECT f.id, f.created_at, fra.*
+                SELECT f.fra_id, fra.*
                 FROM favorites f
                 JOIN fund_raising_activities fra ON fra.id = f.fra_id
                 WHERE f.user_id = %s

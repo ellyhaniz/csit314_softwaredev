@@ -3,6 +3,18 @@ from app.config.db import get_db
 
 class ReportedCampaignRepository:
     @classmethod
+    def create(cls, fra_id: int, reported_by: int, reason: str):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO reported_campaigns (fra_id, reported_by, reason) "
+                "VALUES (%s, %s, %s) RETURNING *",
+                (fra_id, reported_by, reason),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+    @classmethod
     def get_all(cls):
         with get_db() as conn:
             cur = conn.cursor()

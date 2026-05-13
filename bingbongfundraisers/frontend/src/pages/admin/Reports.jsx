@@ -1,13 +1,34 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AdminSidebar from '../../components/AdminSidebar';
 import { generateReport } from '../../lib/api';
 
-const REPORT_TYPES = ['Daily', 'Weekly', 'Monthly'];
+function downloadCSV(report, startDate, endDate) {
+  const rows = [
+    ['Metric', 'Value'],
+    ['Period', `${startDate} to ${endDate}`],
+    ['Report Date', report.report_date ?? ''],
+    ['New Campaigns', report.new_fras ?? 0],
+    ['Total Donations (SGD)', report.total_donations ?? 0],
+    ['Active Users', report.active_users ?? 0],
+    ['New Users', report.new_users ?? 0],
+  ];
+  const csv = rows.map((r) => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `report_${startDate}_${endDate}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function Reports() {
-  const { user } = useAuth();
-  const [reportType, setReportType] = useState('Monthly');
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  function handleLogout() { logout(); navigate('/login'); }
+
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [report, setReport] = useState(null);
@@ -16,11 +37,13 @@ export default function Reports() {
 
   async function handleGenerate(e) {
     e.preventDefault();
+    if (!startDate || !endDate) { setError('Please select both start and end dates.'); return; }
+    if (startDate > endDate) { setError('Start date must be before end date.'); return; }
     setError('');
     setLoading(true);
     try {
-      const data = await generateReport(reportType.toLowerCase(), user?.id);
-      setReport(data);
+      const data = await generateReport(startDate, endDate, user?.id);
+      setReport(data.report ?? data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -31,8 +54,11 @@ export default function Reports() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-gray-900 text-white h-14 flex items-center justify-between px-6">
-        <span className="font-semibold">Donate today · Admin</span>
-        <span className="text-gray-300 text-sm">{user?.email}</span>
+        <span className="font-semibold">Donate today · Platform Management</span>
+        <div className="flex items-center gap-4">
+          <span className="text-gray-300 text-sm">{user?.email}</span>
+          <button onClick={handleLogout} className="text-gray-300 text-sm hover:text-white transition-colors">Log out</button>
+        </div>
       </div>
 
       <div className="flex">
@@ -48,29 +74,6 @@ export default function Reports() {
           )}
 
           <form onSubmit={handleGenerate} className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-            <p className="text-sm font-medium text-gray-700 mb-3">Report type</p>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              {REPORT_TYPES.map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setReportType(type)}
-                  className={`border rounded-lg p-4 text-left transition-colors ${
-                    reportType === type
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
-                  }`}
-                >
-                  <p className="font-semibold">{type}</p>
-                  <p className={`text-xs mt-0.5 ${reportType === type ? 'text-gray-300' : 'text-gray-400'}`}>
-                    {type === 'Daily' && 'Last 24 hours'}
-                    {type === 'Weekly' && 'Last 7 days'}
-                    {type === 'Monthly' && 'Last 30 days'}
-                  </p>
-                </button>
-              ))}
-            </div>
-
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Start date</label>
@@ -78,6 +81,7 @@ export default function Reports() {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  required
                   className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
                 />
               </div>
@@ -87,6 +91,7 @@ export default function Reports() {
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  required
                   className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
                 />
               </div>
@@ -104,16 +109,22 @@ export default function Reports() {
           {report && (
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Report Results</h2>
-                <button className="border border-gray-200 px-4 py-1.5 rounded text-sm text-gray-700 hover:border-gray-400 transition-colors">
-                  ↓ Download Report
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Report Results</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{startDate} to {endDate}</p>
+                </div>
+                <button
+                  onClick={() => downloadCSV(report, startDate, endDate)}
+                  className="border border-gray-200 px-4 py-1.5 rounded text-sm text-gray-700 hover:border-gray-400 transition-colors"
+                >
+                  ↓ Download CSV
                 </button>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'New FRAs', value: report.new_fras ?? '—' },
-                  { label: 'Total Donations', value: report.total_donations ? `S$${Number(report.total_donations).toLocaleString()}` : '—' },
+                  { label: 'New Campaigns', value: report.new_fras ?? '—' },
+                  { label: 'Total Donations', value: report.total_donations ? `S$${Number(report.total_donations).toLocaleString()}` : 'S$0' },
                   { label: 'Active Users', value: report.active_users ?? '—' },
                   { label: 'New Users', value: report.new_users ?? '—' },
                 ].map(({ label, value }) => (

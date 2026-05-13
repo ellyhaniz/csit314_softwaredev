@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { registerUser } from '../../lib/api';
 
-const REDIRECT = { fund_raiser: '/dashboard', donor: '/', donee: '/browse' };
+const REDIRECT = { fund_raiser: '/dashboard', donor: '/browse', donee: '/browse' };
 
 export default function Register() {
   const { login } = useAuth();

@@ -225,3 +225,27 @@ INSERT INTO fund_raising_activities (fund_raiser_id, category_id, title, descrip
   (3, 4, 'Animal Rescue Fund', 'Supporting local animal shelters and rescue operations. Help us provide food, medical care, and shelter for abandoned animals.', 5000.00, 1100.00, '2026-12-31', 'Singapore', 'active'),
   (3, 2, 'Bursary for SIM Students', 'Help underprivileged students at SIM complete their degrees. Funds go directly to tuition and living expenses.', 20000.00, 8000.00, '2026-12-31', 'Singapore', 'active')
 ON CONFLICT DO NOTHING;
+
+-- SEED: DONATIONS (donor_id=1 = donor@sim.com, donee_id=2 = donee@sim.com)
+-- Multiple donations to FRA 1 to trigger spike detection on first run
+
+INSERT INTO donations (fra_id, donor_id, amount, message, status) VALUES
+  (1, 1, 100.00, 'Hope this helps!', 'completed'),
+  (1, 2, 50.00, NULL, 'completed'),
+  (1, 1, 75.00, 'Stay strong!', 'completed'),
+  (1, 2, 60.00, NULL, 'completed'),
+  (1, 1, 90.00, 'Wishing a speedy recovery', 'completed'),
+  (1, 2, 45.00, NULL, 'completed'),
+  (2, 1, 200.00, 'For the flood victims', 'completed'),
+  (2, 2, 150.00, NULL, 'completed'),
+  (3, 1, 6000.00, NULL, 'flagged'),
+  (4, 2, 300.00, 'Good luck with your studies!', 'completed'),
+  (4, 1, 250.00, NULL, 'completed')
+ON CONFLICT DO NOTHING;
+
+-- SEED: REPORTED CAMPAIGNS
+
+INSERT INTO reported_campaigns (fra_id, reported_by, reason, status) VALUES
+  (3, 1, 'Images appear fake. Profile picture looks like a stock photo.', 'pending'),
+  (2, 2, 'Cannot verify the beneficiary information provided.', 'pending')
+ON CONFLICT DO NOTHING;

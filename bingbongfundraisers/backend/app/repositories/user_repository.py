@@ -48,25 +48,23 @@ class UserRepository:
             return row["violation_count"] if row else None
 
     @classmethod
-    def get_active_count(cls, period: str):
+    def get_active_count(cls, start_date: str, end_date: str):
         with get_db() as conn:
             cur = conn.cursor()
-            intervals = {"daily": "1 day", "weekly": "7 days", "monthly": "30 days"}
-            interval = intervals.get(period, "30 days")
             cur.execute(
-                f"SELECT COUNT(DISTINCT donor_id) AS count FROM donations "
-                f"WHERE created_at >= NOW() - INTERVAL '{interval}'"
+                "SELECT COUNT(DISTINCT donor_id) AS count FROM donations "
+                "WHERE DATE(created_at) BETWEEN %s AND %s",
+                (start_date, end_date),
             )
             return cur.fetchone()["count"]
 
     @classmethod
-    def get_new_count(cls, period: str):
+    def get_new_count(cls, start_date: str, end_date: str):
         with get_db() as conn:
             cur = conn.cursor()
-            intervals = {"daily": "1 day", "weekly": "7 days", "monthly": "30 days"}
-            interval = intervals.get(period, "30 days")
             cur.execute(
-                f"SELECT COUNT(*) AS count FROM users "
-                f"WHERE created_at >= NOW() - INTERVAL '{interval}'"
+                "SELECT COUNT(*) AS count FROM users "
+                "WHERE DATE(created_at) BETWEEN %s AND %s",
+                (start_date, end_date),
             )
             return cur.fetchone()["count"]

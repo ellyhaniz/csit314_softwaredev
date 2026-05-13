@@ -17,6 +17,14 @@ VALID_USER_ACTIONS = {"suspended", "banned"}
 class ModerationService:
     # PM-03: Reported Campaigns
     @staticmethod
+    def create_report(fra_id: int, reported_by: int, reason: str):
+        fra = FRARepository.get_by_id(fra_id)
+        if not fra:
+            raise HTTPException(status_code=404, detail="Campaign not found")
+        report = ReportedCampaignRepository.create(fra_id, reported_by, reason)
+        return {"message": "Campaign reported", "report": report}
+
+    @staticmethod
     def get_reported_campaigns():
         reports = ReportedCampaignRepository.get_all()
         return {"count": len(reports), "reports": reports}

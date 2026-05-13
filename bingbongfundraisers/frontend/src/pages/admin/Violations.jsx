@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AdminSidebar from '../../components/AdminSidebar';
 import { getFlaggedUsers, getUserViolations, actionUser } from '../../lib/api';
@@ -24,7 +25,9 @@ function getSeverity(count) {
 }
 
 export default function Violations() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  function handleLogout() { logout(); navigate('/login'); }
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -86,8 +89,11 @@ export default function Violations() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-gray-900 text-white h-14 flex items-center justify-between px-6">
-        <span className="font-semibold">Donate today · Admin</span>
-        <span className="text-gray-300 text-sm">{user?.email}</span>
+        <span className="font-semibold">Donate today · User Admin</span>
+        <div className="flex items-center gap-4">
+          <span className="text-gray-300 text-sm">{user?.email}</span>
+          <button onClick={handleLogout} className="text-gray-300 text-sm hover:text-white transition-colors">Log out</button>
+        </div>
       </div>
 
       <div className="flex">

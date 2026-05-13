@@ -33,6 +33,15 @@ class FRARepository:
             return dict(row) if row else None
 
     @classmethod
+    def update_current_amount(cls, fra_id: int, amount: float):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE fund_raising_activities SET current_amount = current_amount + %s WHERE id = %s",
+                (amount, fra_id),
+            )
+
+    @classmethod
     def search(cls, keyword: str = None, category_id: int = None, end_date: str = None):
         with get_db() as conn:
             cur = conn.cursor()
@@ -158,13 +167,12 @@ class FRARepository:
             return [dict(r) for r in cur.fetchall()]
 
     @classmethod
-    def get_new_count(cls, period: str):
+    def get_new_count(cls, start_date: str, end_date: str):
         with get_db() as conn:
             cur = conn.cursor()
-            intervals = {"daily": "1 day", "weekly": "7 days", "monthly": "30 days"}
-            interval = intervals.get(period, "30 days")
             cur.execute(
-                f"SELECT COUNT(*) AS count FROM fund_raising_activities "
-                f"WHERE created_at >= NOW() - INTERVAL '{interval}'"
+                "SELECT COUNT(*) AS count FROM fund_raising_activities "
+                "WHERE DATE(created_at) BETWEEN %s AND %s",
+                (start_date, end_date),
             )
             return cur.fetchone()["count"]

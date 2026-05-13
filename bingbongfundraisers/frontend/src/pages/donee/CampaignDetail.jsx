@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { getFRA, getProgress, getImpactScore, getCampaignUpdates } from '../../lib/api';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { getFRA, getProgress, getImpactScore, getCampaignUpdates, reportCampaign } from '../../lib/api';
 import Navbar from '../../components/Navbar';
 import FundraiserHeader from '../../components/FundraiserHeader';
 import ProgressBar from '../../components/ProgressBar';
@@ -37,13 +37,22 @@ function timeAgo(dateStr) {
 export default function CampaignDetail() {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isFundraiser = user?.user_type === 'fund_raiser';
+  const isDonor = user?.user_type === 'donor';
+  const isDonee = user?.user_type === 'donee';
+  const canReport = (isDonor || isDonee) && user;
   const [fra, setFra] = useState(null);
   const [progress, setProgress] = useState(null);
   const [impact, setImpact] = useState(null);
   const [updates, setUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showReport, setShowReport] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportDone, setReportDone] = useState(false);
+  const [reportError, setReportError] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -61,6 +70,22 @@ export default function CampaignDetail() {
       .catch(() => setError('Campaign not found'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  async function handleReport(e) {
+    e.preventDefault();
+    if (!reportReason.trim()) return;
+    setReportLoading(true);
+    setReportError('');
+    try {
+      await reportCampaign({ fra_id: Number(id), reported_by: user.id, reason: reportReason.trim() });
+      setReportDone(true);
+      setReportReason('');
+    } catch (err) {
+      setReportError(err.message);
+    } finally {
+      setReportLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -133,7 +158,17 @@ export default function CampaignDetail() {
           <span className="text-gray-900 truncate">{fra.title}</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">{fra.title}</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">{fra.title}</h1>
+          {canReport && !isClosed && (
+            <button
+              onClick={() => { setShowReport(true); setReportDone(false); setReportError(''); }}
+              className="text-xs text-gray-400 hover:text-red-600 transition-colors underline"
+            >
+              Report this campaign
+            </button>
+          )}
+        </div>
 
         {isClosed ? (
           <ClosedView fra={fra} pct={pct} donorCount={donorCount} updates={updates} imgSrc={imgSrc} />
@@ -147,9 +182,67 @@ export default function CampaignDetail() {
             donors={donors}
             updates={updates}
             imgSrc={imgSrc}
+            onDonate={isDonor ? () => navigate(`/fra/${id}/donate`) : null}
           />
         )}
       </div>
+
+      {showReport && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 w-full max-w-sm shadow-lg">
+            {reportDone ? (
+              <>
+                <p className="font-semibold text-gray-900 mb-1">Report submitted</p>
+                <p className="text-sm text-gray-500 mb-4">
+                  Thank you. Our team will review this campaign.
+                </p>
+                <button
+                  onClick={() => setShowReport(false)}
+                  className="w-full bg-gray-900 text-white py-2 rounded text-sm font-medium hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-gray-900 mb-1">Report this campaign</p>
+                <p className="text-sm text-gray-500 mb-4">
+                  Describe why you believe this campaign violates our guidelines.
+                </p>
+                {reportError && (
+                  <p className="text-xs text-red-600 mb-3">{reportError}</p>
+                )}
+                <form onSubmit={handleReport}>
+                  <textarea
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    required
+                    rows={4}
+                    placeholder="e.g. This campaign appears to be fraudulent..."
+                    className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-400 resize-none mb-4"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowReport(false)}
+                      className="flex-1 border border-gray-200 text-gray-700 py-2 rounded text-sm font-medium hover:border-gray-400 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={reportLoading || !reportReason.trim()}
+                      className="flex-1 bg-red-600 text-white py-2 rounded text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-60"
+                    >
+                      {reportLoading ? 'Submitting…' : 'Submit Report'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -207,7 +300,7 @@ function ClosedView({ fra, pct, donorCount, updates, imgSrc }) {
   );
 }
 
-function ActiveView({ fra, pct, donorCount, avgDonation, impactScore, donors, updates, imgSrc }) {
+function ActiveView({ fra, pct, donorCount, avgDonation, impactScore, donors, updates, imgSrc, onDonate }) {
   return (
     <div className="space-y-6">
       <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -236,6 +329,15 @@ function ActiveView({ fra, pct, donorCount, avgDonation, impactScore, donors, up
           <span>{pct}% funded</span>
           <span>{donorCount} donors · {daysLeft(fra.end_date)} days left</span>
         </div>
+
+        {onDonate && (
+          <button
+            onClick={onDonate}
+            className="mt-4 w-full bg-indigo-700 text-white py-2.5 rounded text-sm font-medium hover:bg-indigo-800 transition-colors"
+          >
+            Donate now
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

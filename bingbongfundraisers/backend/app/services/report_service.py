@@ -7,23 +7,23 @@ from app.repositories.fra_repository import FRARepository
 from app.repositories.platform_report_repository import PlatformReportRepository
 from app.repositories.user_repository import UserRepository
 
-VALID_PERIODS = {"daily", "weekly", "monthly"}
-
 
 class ReportService:
     # PM-01: Generate Platform Activity Report
     @staticmethod
-    def generate_report(period: str, generated_by: int = None):
-        if period not in VALID_PERIODS:
-            raise HTTPException(status_code=400, detail="Period must be daily, weekly, or monthly")
+    def generate_report(start_date: str, end_date: str, generated_by: int = None):
+        if not start_date or not end_date:
+            raise HTTPException(status_code=400, detail="start_date and end_date are required")
+        if start_date > end_date:
+            raise HTTPException(status_code=400, detail="start_date must be before end_date")
 
-        new_fras = FRARepository.get_new_count(period)
-        total_donations = DonationRepository.get_total_donations(period)
-        active_users = UserRepository.get_active_count(period)
-        new_users = UserRepository.get_new_count(period)
+        new_fras = FRARepository.get_new_count(start_date, end_date)
+        total_donations = DonationRepository.get_total_donations(start_date, end_date)
+        active_users = UserRepository.get_active_count(start_date, end_date)
+        new_users = UserRepository.get_new_count(start_date, end_date)
 
         data = {
-            "period": period,
+            "period": f"{start_date} to {end_date}",
             "report_date": date.today().isoformat(),
             "new_fras": new_fras,
             "total_donations": total_donations,
