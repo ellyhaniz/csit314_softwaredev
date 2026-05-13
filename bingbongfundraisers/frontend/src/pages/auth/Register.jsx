@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { registerUser } from '../../lib/api';
 
-const REDIRECT = { fund_raiser: '/dashboard', donee: '/browse' };
+const REDIRECT = { fund_raiser: '/dashboard', donor: '/', donee: '/browse' };
 
 export default function Register() {
   const { login } = useAuth();
@@ -13,7 +13,7 @@ export default function Register() {
     email: '',
     password: '',
     phone: '',
-    user_type: 'donee',
+    user_type: 'donor',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -112,10 +112,11 @@ export default function Register() {
 
           <div>
             <p className="text-sm font-medium text-gray-700 mb-2">I am a</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { value: 'donee', label: 'Donee', sub: 'I want to donate' },
+                { value: 'donor', label: 'Donor', sub: 'I want to donate' },
                 { value: 'fund_raiser', label: 'Fund Raiser', sub: 'I want to raise funds' },
+                { value: 'donee', label: 'Donee', sub: 'I am a beneficiary' },
               ].map(({ value, label, sub }) => (
                 <button
                   key={value}

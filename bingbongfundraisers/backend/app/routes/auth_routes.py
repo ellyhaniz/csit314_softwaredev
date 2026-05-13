@@ -22,7 +22,7 @@ class RegisterRequest(BaseModel):
     password: str
     full_name: str
     phone: str | None = None
-    user_type: str = "donee"
+    user_type: str = "donor"
 
 
 @router.post("/login")
@@ -49,8 +49,8 @@ def login(request: LoginRequest):
 
 @router.post("/register")
 def register(request: RegisterRequest):
-    if request.user_type not in ("fund_raiser", "donee"):
-        raise HTTPException(status_code=400, detail="user_type must be fund_raiser or donee")
+    if request.user_type not in ("fund_raiser", "donor", "donee"):
+        raise HTTPException(status_code=400, detail="user_type must be fund_raiser, donor, or donee")
     with get_db() as conn:
         cur = conn.cursor()
         cur.execute("SELECT id FROM users WHERE email = %s", (request.email,))

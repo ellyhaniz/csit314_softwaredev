@@ -1,6 +1,6 @@
 -- ENUMS
 
-CREATE TYPE user_type AS ENUM ('fund_raiser', 'donee', 'user_admin', 'platform_management');
+CREATE TYPE user_type AS ENUM ('fund_raiser', 'donor', 'donee', 'user_admin', 'platform_management');
 CREATE TYPE user_status AS ENUM ('active', 'suspended', 'banned');
 CREATE TYPE fra_status AS ENUM ('draft', 'active', 'completed', 'expired', 'cancelled');
 CREATE TYPE donation_status AS ENUM ('pending', 'completed', 'flagged', 'refunded');
@@ -209,6 +209,7 @@ ON CONFLICT (slug) DO NOTHING;
 -- SEED: TEST ACCOUNTS (all roles)
 
 INSERT INTO users (email, password_hash, user_type, full_name, status, violation_count) VALUES
+  ('donor@sim.com',                  encode(sha256('donor'::bytea), 'hex'),                  'donor',                'Donor User',                'active', 0),
   ('donee@sim.com',                  encode(sha256('donee'::bytea), 'hex'),                  'donee',                'Donee User',                'active', 0),
   ('fundraiser@sim.com',             encode(sha256('fundraiser'::bytea), 'hex'),             'fund_raiser',          'Fund Raiser User',          'active', 0),
   ('admin@sim.com',                  encode(sha256('admin'::bytea), 'hex'),                  'user_admin',           'Admin',                     'active', 0),
