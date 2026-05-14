@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from app.repositories.donation_repository import DonationRepository
 from app.repositories.fra_repository import FRARepository
+from app.repositories.notification_repository import NotificationRepository
 from app.repositories.thank_you_repository import ThankYouRepository
 
 
@@ -29,6 +30,7 @@ class ThankYouService:
             raise HTTPException(status_code=403, detail="Not authorised to send thank you for this campaign")
 
         saved = ThankYouRepository.save(fra_id, fund_raiser_id, donor_id, message)
+        NotificationRepository.create(donor_id, f"You received a thank you for your donation to \"{fra['title']}\"")
         return {"message": "Thank you message sent", "thank_you": saved}
 
     @staticmethod
