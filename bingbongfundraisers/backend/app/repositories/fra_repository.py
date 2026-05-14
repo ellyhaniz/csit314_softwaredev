@@ -12,14 +12,15 @@ class FRARepository:
                 """
                 INSERT INTO fund_raising_activities
                     (fund_raiser_id, category_id, title, description,
-                     target_amount, end_date, location_text, latitude, longitude)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                     target_amount, end_date, location_text, latitude, longitude, donee_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING *
                 """,
                 (
                     data["fund_raiser_id"], data["category_id"], data["title"],
                     data.get("description"), data["target_amount"], data["end_date"],
                     data.get("location_text"), data.get("latitude"), data.get("longitude"),
+                    data.get("donee_id"),
                 ),
             )
             return dict(cur.fetchone())

@@ -24,6 +24,7 @@ class CreateFRARequest(BaseModel):
     location_text: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    donee_email: Optional[str] = None
 
 
 class PostUpdateRequest(BaseModel):

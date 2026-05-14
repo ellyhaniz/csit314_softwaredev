@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from app.repositories.campaign_update_repository import CampaignUpdateRepository
 from app.repositories.donation_repository import DonationRepository
 from app.repositories.fra_repository import FRARepository
+from app.repositories.user_repository import UserRepository
 
 
 class FRAService:
@@ -16,6 +17,12 @@ class FRAService:
             raise HTTPException(status_code=400, detail="End date must be in the future")
         if data["target_amount"] <= 0:
             raise HTTPException(status_code=400, detail="Target amount must be positive")
+        donee_email = data.pop("donee_email", None)
+        if donee_email:
+            donee = UserRepository.get_by_email(donee_email)
+            if not donee or donee["user_type"] != "donee":
+                raise HTTPException(status_code=400, detail="No donee account found with that email")
+            data["donee_id"] = donee["id"]
         return FRARepository.create(data)
 
     @staticmethod

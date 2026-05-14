@@ -183,7 +183,7 @@ export default function CampaignDetail() {
             updates={updates}
             imgSrc={imgSrc}
             onDonate={isDonor ? () => navigate(`/fra/${id}/donate`) : null}
-            onThankDonors={isDonee ? () => navigate(`/fra/${id}/thank-donors`) : null}
+            onThankDonors={isDonee && fra.donee_id === user.id ? () => navigate(`/fra/${id}/thank-donors`) : null}
           />
         )}
       </div>

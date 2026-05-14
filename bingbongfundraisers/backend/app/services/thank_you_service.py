@@ -22,6 +22,12 @@ class ThankYouService:
         if len(message) > 1000:
             raise HTTPException(status_code=400, detail="Message must be under 1000 characters")
 
+        fra = FRARepository.get_by_id(fra_id)
+        if not fra:
+            raise HTTPException(status_code=404, detail="FRA not found")
+        if fra["fund_raiser_id"] != fund_raiser_id and fra.get("donee_id") != fund_raiser_id:
+            raise HTTPException(status_code=403, detail="Not authorised to send thank you for this campaign")
+
         saved = ThankYouRepository.save(fra_id, fund_raiser_id, donor_id, message)
         return {"message": "Thank you message sent", "thank_you": saved}
 

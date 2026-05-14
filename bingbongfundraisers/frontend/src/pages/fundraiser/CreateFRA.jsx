@@ -89,6 +89,7 @@ export default function CreateFRA() {
     contact: '',
     address: '',
     story: '',
+    donee_email: '',
   });
 
   useEffect(() => {
@@ -121,6 +122,7 @@ export default function CreateFRA() {
         end_date: details.end_date,
         description: details.description,
         fund_raiser_id: user?.id,
+        donee_email: beneficiary.donee_email.trim() || null,
       });
       if (photo && fra?.id) {
         await new Promise((resolve) => {
@@ -386,6 +388,22 @@ export default function CreateFRA() {
                   className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-400 resize-none"
                   placeholder="Share their story to help donors connect"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Donee account email <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={beneficiary.donee_email}
+                  onChange={setBene('donee_email')}
+                  className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
+                  placeholder="e.g. beneficiary@email.com"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Link a donee account so they can thank donors on your behalf.
+                </p>
               </div>
 
               <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-xs text-gray-400">
