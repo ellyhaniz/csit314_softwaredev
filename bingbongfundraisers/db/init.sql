@@ -277,3 +277,9 @@ INSERT INTO favorites (user_id, fra_id) VALUES
   (2, 1),
   (2, 4)
 ON CONFLICT DO NOTHING;
+
+-- SEED: USER PREFERENCES (donor@sim.com prefers Medical + Education for DO-02 recommendations)
+
+INSERT INTO user_preferences (user_id, preferred_categories) VALUES
+  (1, ARRAY[1, 2])
+ON CONFLICT (user_id) DO NOTHING;

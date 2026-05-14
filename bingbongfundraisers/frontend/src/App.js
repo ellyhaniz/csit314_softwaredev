@@ -16,6 +16,7 @@ import Favourites from './pages/donee/Favourites';
 
 import Home from './pages/home/Home';
 import SearchMatch from './pages/home/SearchMatch';
+import EditPreferences from './pages/home/EditPreferences';
 
 import Reports from './pages/admin/Reports';
 import Categories from './pages/admin/Categories';
@@ -36,7 +37,7 @@ function RequireAuth({ children, allowedTypes }) {
 function HomeRoute() {
   const { user } = useAuth();
   if (user?.user_type === 'fund_raiser') return <Navigate to="/dashboard" replace />;
-  if (user?.user_type === 'donor') return <Navigate to="/browse" replace />;
+  if (user?.user_type === 'donor') return <Navigate to="/recommendations" replace />;
   if (user?.user_type === 'donee') return <Navigate to="/browse" replace />;
   if (user?.user_type === 'user_admin') return <Navigate to="/admin/violations" replace />;
   if (user?.user_type === 'platform_management') return <Navigate to="/admin/reports" replace />;
@@ -60,6 +61,16 @@ export default function App() {
 
       {/* Public home — redirects logged-in non-donee users to their page */}
       <Route path="/" element={<HomeRoute />} />
+      <Route path="/recommendations" element={
+        <RequireAuth allowedTypes={['donor', 'donee']}>
+          <Home />
+        </RequireAuth>
+      } />
+      <Route path="/preferences" element={
+        <RequireAuth allowedTypes={['donor']}>
+          <EditPreferences />
+        </RequireAuth>
+      } />
       <Route path="/favourites" element={
         <RequireAuth allowedTypes={['donor', 'donee']}>
           <Favourites />

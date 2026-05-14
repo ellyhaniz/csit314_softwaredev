@@ -60,6 +60,15 @@ export const getTrending = () => request('/api/recommendations/trending');
 export const getRecommendations = (donorId) =>
   request(`/api/recommendations/${donorId}`);
 
+export const getPreferences = (userId) =>
+  request(`/api/preferences/${userId}`);
+
+export const savePreferences = (userId, preferredCategories) =>
+  request(`/api/preferences/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ preferred_categories: preferredCategories }),
+  });
+
 // Favourites
 export const saveFavourite = (userId, fraId) =>
   request('/api/favourites', {
