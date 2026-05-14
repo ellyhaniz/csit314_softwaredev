@@ -1,71 +1,117 @@
-import { useEffect, useState } from 'react';
-import './App.css';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 
-function App() {
-  const [health, setHealth] = useState(null);
-  const [helloCount, setHelloCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const [healthResponse, helloResponse] = await Promise.all([
-          fetch('/api/health'),
-          fetch('/api/hello'),
-        ]);
+import Dashboard from './pages/fundraiser/Dashboard';
+import CreateFRA from './pages/fundraiser/CreateFRA';
+import PostUpdate from './pages/fundraiser/PostUpdate';
 
-        if (!healthResponse.ok) {
-          throw new Error(`Health request failed: ${healthResponse.status}`);
-        }
-        if (!helloResponse.ok) {
-          throw new Error(`Hello request failed: ${helloResponse.status}`);
-        }
+import Browse from './pages/donee/Browse';
+import CampaignDetail from './pages/donee/CampaignDetail';
+import ThankDonors from './pages/donee/ThankDonors';
+import Favourites from './pages/donee/Favourites';
 
-        const healthData = await healthResponse.json();
-        const helloData = await helloResponse.json();
-        setHealth(healthData);
-        setHelloCount(helloData.count || 0);
-      } catch (err) {
-        setError(err.message || 'Unable to reach backend');
-      } finally {
-        setLoading(false);
-      }
-    };
+import Home from './pages/home/Home';
+import SearchMatch from './pages/home/SearchMatch';
 
-    fetchInitialData();
-  }, []);
+import Reports from './pages/admin/Reports';
+import Categories from './pages/admin/Categories';
+import ReportedCampaigns from './pages/admin/ReportedCampaigns';
+import Violations from './pages/admin/Violations';
+import FlaggedDonations from './pages/admin/FlaggedDonations';
+import SpikeAlerts from './pages/admin/SpikeAlerts';
 
-  const handleHelloClick = async () => {
-    try {
-      const response = await fetch('/api/hello/click', { method: 'POST' });
-      if (!response.ok) {
-        throw new Error(`Click request failed: ${response.status}`);
-      }
-      const data = await response.json();
-      setHelloCount(data.count || 0);
-      setError('');
-    } catch (err) {
-      setError(err.message || 'Unable to update count');
-    }
-  };
-
-  return (
-    <main className="app">
-      <h1>BingBong Fundraisers</h1>
-      <p>Frontend is running.</p>
-      {loading && <p>Checking backend health...</p>}
-      {!loading && error && <p className="error">Backend error: {error}</p>}
-      {!loading && health && (
-        <p className="ok">
-          Backend status: {health.status} ({health.service})
-        </p>
-      )}
-      <button type="button" onClick={handleHelloClick} className="hello-button">
-        Hello World ({helloCount})
-      </button>
-    </main>
-  );
+function RequireAuth({ children, allowedTypes }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (allowedTypes && !allowedTypes.includes(user.user_type)) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
-export default App;
+export default function App() {
+  return (
+    <Routes>
+      {/* Public */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/browse" element={<Browse />} />
+      <Route path="/fra/:id" element={<CampaignDetail />} />
+      <Route path="/search" element={<SearchMatch />} />
+
+      {/* Donee only */}
+      <Route path="/" element={
+        <RequireAuth allowedTypes={['donee']}>
+          <Home />
+        </RequireAuth>
+      } />
+      <Route path="/favourites" element={
+        <RequireAuth allowedTypes={['donee']}>
+          <Favourites />
+        </RequireAuth>
+      } />
+
+      {/* Fund Raiser only */}
+      <Route path="/dashboard" element={
+        <RequireAuth allowedTypes={['fund_raiser']}>
+          <Dashboard />
+        </RequireAuth>
+      } />
+      <Route path="/fra/create" element={
+        <RequireAuth allowedTypes={['fund_raiser']}>
+          <CreateFRA />
+        </RequireAuth>
+      } />
+      <Route path="/fra/:id/update" element={
+        <RequireAuth allowedTypes={['fund_raiser']}>
+          <PostUpdate />
+        </RequireAuth>
+      } />
+      <Route path="/fra/:id/thank-donors" element={
+        <RequireAuth allowedTypes={['fund_raiser']}>
+          <ThankDonors />
+        </RequireAuth>
+      } />
+
+      {/* Platform Management */}
+      <Route path="/admin/reports" element={
+        <RequireAuth allowedTypes={['platform_management']}>
+          <Reports />
+        </RequireAuth>
+      } />
+      <Route path="/admin/categories" element={
+        <RequireAuth allowedTypes={['platform_management']}>
+          <Categories />
+        </RequireAuth>
+      } />
+      <Route path="/admin/reported" element={
+        <RequireAuth allowedTypes={['platform_management']}>
+          <ReportedCampaigns />
+        </RequireAuth>
+      } />
+
+      {/* User Admin */}
+      <Route path="/admin/violations" element={
+        <RequireAuth allowedTypes={['user_admin']}>
+          <Violations />
+        </RequireAuth>
+      } />
+      <Route path="/admin/donations" element={
+        <RequireAuth allowedTypes={['user_admin']}>
+          <FlaggedDonations />
+        </RequireAuth>
+      } />
+      <Route path="/admin/spikes" element={
+        <RequireAuth allowedTypes={['user_admin']}>
+          <SpikeAlerts />
+        </RequireAuth>
+      } />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+}

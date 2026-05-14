@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.routes.auth_routes import router as auth_router
 from app.routes.category_routes import router as category_router
 from app.routes.favourite_routes import router as favourite_router
 from app.routes.fra_routes import router as fra_router
@@ -11,6 +12,7 @@ from app.routes.thank_you_routes import router as thank_you_router
 
 app = FastAPI(title="BingBong Fundraisers API")
 
+app.include_router(auth_router)
 app.include_router(hello_router)
 app.include_router(fra_router)
 app.include_router(search_router)
