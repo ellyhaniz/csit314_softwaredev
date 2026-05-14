@@ -8,6 +8,7 @@ from app.config.db import get_db
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
+
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
