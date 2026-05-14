@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import AdminSidebar from '../../components/AdminSidebar';
-import { getSpikeAlerts, dismissSpike } from '../../lib/api';
+import { getSpikeAlerts, dismissSpike, monitorSpikes } from '../../lib/api';
 
 const TABS = ['Active', 'Dismissed'];
 
@@ -28,8 +28,10 @@ export default function SpikeAlerts() {
 
   function load() {
     setLoading(true);
-    getSpikeAlerts()
-      .then((data) => setSpikes(Array.isArray(data) ? data : []))
+    monitorSpikes()
+      .catch(() => {})
+      .then(() => getSpikeAlerts())
+      .then((data) => setSpikes(Array.isArray(data) ? data : (data.spike_alerts ?? [])))
       .catch(() => setSpikes([]))
       .finally(() => setLoading(false));
   }

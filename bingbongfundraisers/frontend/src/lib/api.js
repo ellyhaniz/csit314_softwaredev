@@ -132,6 +132,9 @@ export const reviewDonation = (donationId, decision) =>
     body: JSON.stringify({ decision }),
   });
 
+export const monitorSpikes = () =>
+  request('/api/moderation/spikes/monitor', { method: 'POST' });
+
 export const getSpikeAlerts = () => request('/api/moderation/spikes');
 
 export const dismissSpike = (fraId) =>

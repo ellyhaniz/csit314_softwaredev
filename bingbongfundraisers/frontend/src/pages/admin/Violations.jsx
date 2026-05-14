@@ -40,7 +40,7 @@ export default function Violations() {
   function load() {
     setLoading(true);
     getFlaggedUsers()
-      .then((data) => setUsers(Array.isArray(data) ? data : []))
+      .then((data) => setUsers(Array.isArray(data) ? data : (data.flagged_users ?? [])))
       .catch(() => setUsers([]))
       .finally(() => setLoading(false));
   }

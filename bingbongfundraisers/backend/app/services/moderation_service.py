@@ -12,7 +12,6 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.user_violation_repository import UserViolationRepository
 
 VALID_REPORT_ACTIONS = {"reviewed", "dismissed", "actioned"}
-VALID_USER_ACTIONS = {"suspended", "banned"}
 
 
 class ModerationService:
@@ -57,6 +56,12 @@ class ModerationService:
         fra_title = fra["title"] if fra else "a campaign"
         reporter_id = report["reported_by"]
 
+        if action in {"reviewed", "actioned"} and fra:
+            fundraiser_id = fra["fund_raiser_id"]
+            description = f"Campaign '{fra_title}' was reported and actioned by admin."
+            UserViolationRepository.create(fundraiser_id, "reported_campaign", description, reviewed_by)
+            UserRepository.increment_violation_count(fundraiser_id)
+
         if action == "dismissed":
             msg = f"Your report on '{fra_title}' was reviewed. No action was taken."
         elif action == "reviewed":
@@ -88,8 +93,8 @@ class ModerationService:
 
     @staticmethod
     def apply_user_action(user_id: int, action: str, reason: str, actioned_by: int):
-        if action not in VALID_USER_ACTIONS:
-            raise HTTPException(status_code=400, detail=f"Action must be one of: {VALID_USER_ACTIONS}")
+        if action not in {"warn", "suspend", "ban"}:
+            raise HTTPException(status_code=400, detail="Action must be one of: warn, suspend, ban")
 
         user = UserRepository.get_by_id(user_id)
         if not user:
@@ -97,7 +102,13 @@ class ModerationService:
 
         violation = UserViolationRepository.create(user_id, action, reason, actioned_by)
         UserRepository.increment_violation_count(user_id)
-        updated_user = UserRepository.update_status(user_id, action)
+
+        if action == "suspend":
+            updated_user = UserRepository.update_status(user_id, "suspended")
+        elif action == "ban":
+            updated_user = UserRepository.update_status(user_id, "banned")
+        else:
+            updated_user = UserRepository.get_by_id(user_id)
 
         return {"message": f"User {action}", "user": updated_user, "violation": violation}
 
@@ -118,13 +129,26 @@ class ModerationService:
 
     @staticmethod
     def review_donation(donation_id: int, decision: str):
-        valid = {"completed", "refunded"}
-        if decision not in valid:
-            raise HTTPException(status_code=400, detail="Decision must be 'completed' or 'refunded'")
-        updated = DonationRepository.update_status(donation_id, decision)
+        decision_map = {"approve": "completed", "reject": "refunded"}
+        if decision not in decision_map:
+            raise HTTPException(status_code=400, detail="Decision must be 'approve' or 'reject'")
+        status = decision_map[decision]
+        updated = DonationRepository.update_status(donation_id, status)
         if not updated:
             raise HTTPException(status_code=404, detail="Donation not found")
-        return {"message": f"Donation {decision}", "donation": updated}
+        if status == "completed":
+            fra_id = updated.get("fra_id")
+            amount = float(updated.get("amount", 0))
+            if fra_id and amount:
+                FRARepository.update_current_amount(fra_id, amount)
+        elif status == "refunded":
+            donor_id = updated.get("donor_id")
+            amount = updated.get("amount", 0)
+            if donor_id:
+                description = f"Flagged donation of S${amount} was rejected by admin."
+                UserViolationRepository.create(donor_id, "rejected_donation", description, 0)
+                UserRepository.increment_violation_count(donor_id)
+        return {"message": f"Donation {decision}d", "donation": updated}
 
     # UA-07: Detect Spikes
     @staticmethod

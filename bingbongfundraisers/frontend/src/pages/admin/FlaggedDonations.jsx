@@ -33,7 +33,7 @@ export default function FlaggedDonations() {
   function load() {
     setLoading(true);
     getFlaggedDonations()
-      .then((data) => setDonations(Array.isArray(data) ? data : []))
+      .then((data) => setDonations(Array.isArray(data) ? data : (data.flagged_donations ?? [])))
       .catch(() => setDonations([]))
       .finally(() => setLoading(false));
   }
@@ -54,17 +54,16 @@ export default function FlaggedDonations() {
   }
 
   const filtered = donations.filter((d) => {
-    const status = (d.status || d.review_status || 'pending').toLowerCase();
-    if (tab === 'Pending') return status === 'pending';
-    if (tab === 'Verified') return status === 'approved' || status === 'verified';
-    if (tab === 'Rejected') return status === 'rejected';
+    const status = (d.status || '').toLowerCase();
+    if (tab === 'Pending') return status === 'flagged';
+    if (tab === 'Verified') return status === 'completed';
+    if (tab === 'Rejected') return status === 'refunded';
     return true;
   });
 
-  const pendingCount = donations.filter((d) => {
-    const status = (d.status || d.review_status || 'pending').toLowerCase();
-    return status === 'pending';
-  }).length;
+  const pendingCount = donations.filter((d) =>
+    (d.status || '').toLowerCase() === 'flagged'
+  ).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -139,8 +138,8 @@ export default function FlaggedDonations() {
                   </tr>
                 )}
                 {filtered.map((d) => {
-                  const status = (d.status || d.review_status || 'pending').toLowerCase();
-                  const isPending = status === 'pending';
+                  const status = (d.status || '').toLowerCase();
+                  const isPending = status === 'flagged';
                   return (
                     <tr key={d.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-semibold text-gray-900">{formatSGD(d.amount)}</td>
@@ -153,12 +152,12 @@ export default function FlaggedDonations() {
                           className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
                             isPending
                               ? 'bg-yellow-100 text-yellow-700'
-                              : status === 'approved' || status === 'verified'
+                              : status === 'completed'
                               ? 'bg-green-100 text-green-700'
                               : 'bg-red-100 text-red-700'
                           }`}
                         >
-                          {status}
+                          {isPending ? 'pending review' : status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
