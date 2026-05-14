@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import AdminSidebar from '../../components/AdminSidebar';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../../lib/api';
 
+
 export default function Categories() {
   const { user } = useAuth();
   const [categories, setCategories] = useState([]);
