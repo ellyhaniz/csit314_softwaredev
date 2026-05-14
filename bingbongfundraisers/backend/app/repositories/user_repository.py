@@ -13,6 +13,14 @@ class UserRepository:
             return dict(row) if row else None
 
     @classmethod
+    def get_by_email(cls, email: str):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+    @classmethod
     def update_status(cls, user_id: int, status: str):
         with get_db() as conn:
             cur = conn.cursor()

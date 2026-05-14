@@ -28,15 +28,21 @@ export default function SpikeAlerts() {
 
   function load() {
     setLoading(true);
+    getSpikeAlerts()
+      .then((data) => setSpikes(Array.isArray(data) ? data : (data.spike_alerts ?? [])))
+      .catch(() => setSpikes([]))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    setLoading(true);
     monitorSpikes()
       .catch(() => {})
       .then(() => getSpikeAlerts())
       .then((data) => setSpikes(Array.isArray(data) ? data : (data.spike_alerts ?? [])))
       .catch(() => setSpikes([]))
       .finally(() => setLoading(false));
-  }
-
-  useEffect(() => { load(); }, []);
+  }, []);
 
   async function handleDismiss(fraId) {
     setDismissing(fraId);

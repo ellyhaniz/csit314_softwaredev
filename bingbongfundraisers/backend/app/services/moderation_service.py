@@ -115,8 +115,8 @@ class ModerationService:
     # UA-05: Flag Donations
     @staticmethod
     def get_flagged_donations():
-        flagged = DonationRepository.get_by_status("flagged")
-        return {"count": len(flagged), "flagged_donations": flagged}
+        donations = DonationRepository.get_large_donations()
+        return {"count": len(donations), "flagged_donations": donations}
 
     @staticmethod
     def check_and_flag_donation(donation_id: int, amount: float):
@@ -146,7 +146,7 @@ class ModerationService:
             amount = updated.get("amount", 0)
             if donor_id:
                 description = f"Flagged donation of S${amount} was rejected by admin."
-                UserViolationRepository.create(donor_id, "rejected_donation", description, 0)
+                UserViolationRepository.create(donor_id, "rejected_donation", description, None)
                 UserRepository.increment_violation_count(donor_id)
         return {"message": f"Donation {decision}d", "donation": updated}
 
