@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS fund_raising_activities (
   shortlist_count INT DEFAULT 0,
   impact_score NUMERIC(3,2) DEFAULT 0,
   is_spike_flagged BOOLEAN DEFAULT FALSE,
+  donee_id INT REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -228,11 +229,11 @@ ON CONFLICT (email) DO NOTHING;
 -- SEED: TEST FUND RAISING ACTIVITIES
 -- fund_raiser_id=3 corresponds to fundraiser@sim.com (third user inserted above)
 
-INSERT INTO fund_raising_activities (fund_raiser_id, category_id, title, description, target_amount, current_amount, end_date, location_text, status) VALUES
-  (3, 1, 'Help Sick Children in Singapore', 'Support children battling serious illnesses. Every donation helps cover medical bills and treatment costs for families in need.', 15000.00, 3200.00, '2026-12-31', 'Singapore', 'active'),
-  (3, 3, 'Penang Flood Relief', 'Emergency relief for families affected by the Penang floods. Funds go towards food, shelter, and rebuilding homes.', 10000.00, 6750.00, '2026-12-31', 'Penang, Malaysia', 'active'),
-  (3, 4, 'Animal Rescue Fund', 'Supporting local animal shelters and rescue operations. Help us provide food, medical care, and shelter for abandoned animals.', 5000.00, 1100.00, '2026-12-31', 'Singapore', 'active'),
-  (3, 2, 'Bursary for SIM Students', 'Help underprivileged students at SIM complete their degrees. Funds go directly to tuition and living expenses.', 20000.00, 8000.00, '2026-12-31', 'Singapore', 'active')
+INSERT INTO fund_raising_activities (fund_raiser_id, category_id, title, description, target_amount, current_amount, end_date, location_text, status, donee_id) VALUES
+  (3, 1, 'Help Sick Children in Singapore', 'Support children battling serious illnesses. Every donation helps cover medical bills and treatment costs for families in need.', 15000.00, 3200.00, '2026-12-31', 'Singapore', 'active', 2),
+  (3, 3, 'Penang Flood Relief', 'Emergency relief for families affected by the Penang floods. Funds go towards food, shelter, and rebuilding homes.', 10000.00, 6750.00, '2026-12-31', 'Penang, Malaysia', 'active', 2),
+  (3, 4, 'Animal Rescue Fund', 'Supporting local animal shelters and rescue operations. Help us provide food, medical care, and shelter for abandoned animals.', 5000.00, 1100.00, '2026-12-31', 'Singapore', 'active', 2),
+  (3, 2, 'Bursary for SIM Students', 'Help underprivileged students at SIM complete their degrees. Funds go directly to tuition and living expenses.', 20000.00, 8000.00, '2026-12-31', 'Singapore', 'active', NULL)
 ON CONFLICT DO NOTHING;
 
 -- SEED: DONATIONS (donor_id=1 = donor@sim.com, donee_id=2 = donee@sim.com)

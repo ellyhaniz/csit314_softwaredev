@@ -40,7 +40,7 @@ export default function ThankDonors() {
     ])
       .then(([fraData, donorData]) => {
         setFra(fraData);
-        const list = Array.isArray(donorData) ? donorData : [];
+        const list = Array.isArray(donorData) ? donorData : (donorData?.donors ?? []);
         setDonors(list);
         const alreadyThanked = new Set(
           list.filter((d) => d.thank_you_sent || d.thanked).map((d) => d.donor_id ?? d.id)
