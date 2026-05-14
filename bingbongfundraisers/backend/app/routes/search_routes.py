@@ -1,12 +1,14 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Query
+from pydantic import BaseModel
 
 from app.controllers.search_controller import (
     RecommendationController,
     SearchFRAController,
     SearchMatchController,
 )
+from app.repositories.user_preference_repository import UserPreferenceRepository
 
 router = APIRouter(prefix="/api", tags=["Search & Discovery"])
 
@@ -39,3 +41,20 @@ def get_trending():
 @router.get("/recommendations/{donor_id}", summary="DO-02: Get Personalised Recommendations")
 def get_recommendations(donor_id: int):
     return RecommendationController.get_recommendations(donor_id)
+
+
+# DO-02: Preferences
+class PreferencesRequest(BaseModel):
+    preferred_categories: List[int]
+
+
+@router.get("/preferences/{user_id}", summary="Get user category preferences")
+def get_preferences(user_id: int):
+    prefs = UserPreferenceRepository.get_by_user(user_id)
+    return {"preferred_categories": prefs["preferred_categories"] if prefs else []}
+
+
+@router.put("/preferences/{user_id}", summary="Save user category preferences")
+def save_preferences(user_id: int, body: PreferencesRequest):
+    saved = UserPreferenceRepository.upsert(user_id, body.preferred_categories)
+    return {"message": "Preferences saved", "preferred_categories": saved["preferred_categories"]}

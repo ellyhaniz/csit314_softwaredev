@@ -19,7 +19,11 @@ export default function Navbar() {
 
   const isDonorOrDonee = user?.user_type === 'donor' || user?.user_type === 'donee';
   const navLinks = isDonorOrDonee
-    ? [{ label: 'Browse', to: '/browse' }, { label: 'Favourites', to: '/favourites' }]
+    ? [
+        { label: 'Browse', to: '/browse' },
+        { label: 'Recommendations', to: '/recommendations' },
+        { label: 'Favourites', to: '/favourites' },
+      ]
     : publicLinks;
 
   useEffect(() => {

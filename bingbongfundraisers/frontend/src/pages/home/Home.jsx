@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getRecommendations, getTrending, saveFavourite, getFavourites } from '../../lib/api';
 import Navbar from '../../components/Navbar';
@@ -6,6 +7,7 @@ import CampaignCard from '../../components/CampaignCard';
 
 export default function Home() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [fras, setFras] = useState([]);
   const [favouriteIds, setFavouriteIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -26,10 +28,10 @@ export default function Home() {
     if (user && (user.user_type === 'donor' || user.user_type === 'donee')) {
       getRecommendations(user.id)
         .then((data) => {
-          const list = Array.isArray(data) ? data : [];
+          const list = Array.isArray(data) ? data : (data.recommendations ?? []);
           if (list.length === 0) {
             return getTrending().then((t) => {
-              setFras(Array.isArray(t) ? t : []);
+              setFras(Array.isArray(t) ? t : (t.trending ?? []));
               setIsTrending(true);
             });
           }
@@ -37,13 +39,13 @@ export default function Home() {
         })
         .catch(() => {
           getTrending()
-            .then((t) => { setFras(Array.isArray(t) ? t : []); setIsTrending(true); })
+            .then((t) => { setFras(Array.isArray(t) ? t : (t.trending ?? [])); setIsTrending(true); })
             .catch(() => setFras([]));
         })
         .finally(() => setLoading(false));
     } else {
       getTrending()
-        .then((t) => { setFras(Array.isArray(t) ? t : []); setIsTrending(true); })
+        .then((t) => { setFras(Array.isArray(t) ? t : (t.trending ?? [])); setIsTrending(true); })
         .catch(() => setFras([]))
         .finally(() => setLoading(false));
     }
@@ -83,16 +85,14 @@ export default function Home() {
               </p>
             )}
           </div>
-          {!isTrending && (
-            <div className="flex gap-2 shrink-0">
-              <button className="text-xs border border-gray-200 px-3 py-1.5 rounded hover:border-gray-400 transition-colors text-gray-600">
-                Why these?
-              </button>
-              <button className="text-xs border border-gray-200 px-3 py-1.5 rounded hover:border-gray-400 transition-colors text-gray-600">
-                Edit preferences
-              </button>
-            </div>
-          )}
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => navigate('/preferences')}
+              className="text-xs border border-gray-200 px-3 py-1.5 rounded hover:border-gray-400 transition-colors text-gray-600"
+            >
+              Edit preferences
+            </button>
+          </div>
         </div>
 
         <h2 className="text-sm font-medium text-gray-700 mb-4 mt-6">
