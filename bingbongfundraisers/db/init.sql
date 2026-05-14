@@ -1,11 +1,10 @@
 -- ENUMS
 
-CREATE TYPE user_type AS ENUM ('fund_raiser', 'donee', 'user_admin', 'platform_management');
+CREATE TYPE user_type AS ENUM ('fund_raiser', 'donor', 'donee', 'user_admin', 'platform_management');
 CREATE TYPE user_status AS ENUM ('active', 'suspended', 'banned');
 CREATE TYPE fra_status AS ENUM ('draft', 'active', 'completed', 'expired', 'cancelled');
 CREATE TYPE donation_status AS ENUM ('pending', 'completed', 'flagged', 'refunded');
 CREATE TYPE report_status AS ENUM ('pending', 'reviewed', 'dismissed', 'actioned');
-CREATE TYPE report_period AS ENUM ('daily', 'weekly', 'monthly');
 
 -- USERS
 
@@ -52,6 +51,7 @@ CREATE TABLE IF NOT EXISTS fund_raising_activities (
   shortlist_count INT DEFAULT 0,
   impact_score NUMERIC(3,2) DEFAULT 0,
   is_spike_flagged BOOLEAN DEFAULT FALSE,
+  donee_id INT REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 
 CREATE TABLE IF NOT EXISTS platform_reports (
   id SERIAL PRIMARY KEY,
-  period report_period NOT NULL,
+  period VARCHAR(50) NOT NULL,
   report_date DATE NOT NULL,
   new_fras INT DEFAULT 0,
   total_donations NUMERIC(12,2) DEFAULT 0,
@@ -173,6 +173,16 @@ CREATE TABLE IF NOT EXISTS platform_reports (
   new_users INT DEFAULT 0,
   generated_by INT REFERENCES users(id),
   generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- NOTIFICATIONS
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id),
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- INDEXES
@@ -205,3 +215,65 @@ INSERT INTO categories (name, slug) VALUES
   ('Tech & Innovation', 'tech-innovation'),
   ('Other', 'other')
 ON CONFLICT (slug) DO NOTHING;
+
+-- SEED: TEST ACCOUNTS (all roles)
+
+INSERT INTO users (email, password_hash, user_type, full_name, status, violation_count) VALUES
+  ('donor@sim.com',                  encode(sha256('donor'::bytea), 'hex'),                  'donor',                'Donor User',                'active', 0),
+  ('donee@sim.com',                  encode(sha256('donee'::bytea), 'hex'),                  'donee',                'Donee User',                'active', 0),
+  ('fundraiser@sim.com',             encode(sha256('fundraiser'::bytea), 'hex'),             'fund_raiser',          'Fund Raiser User',          'active', 0),
+  ('admin@sim.com',                  encode(sha256('admin'::bytea), 'hex'),                  'user_admin',           'Admin',                     'active', 0),
+  ('platformmanagement@sim.com',     encode(sha256('platformmanagement'::bytea), 'hex'),     'platform_management',  'Platform Management',       'active', 0)
+ON CONFLICT (email) DO NOTHING;
+
+-- SEED: TEST FUND RAISING ACTIVITIES
+-- fund_raiser_id=3 corresponds to fundraiser@sim.com (third user inserted above)
+
+INSERT INTO fund_raising_activities (fund_raiser_id, category_id, title, description, target_amount, current_amount, end_date, location_text, status, donee_id) VALUES
+  (3, 1, 'Help Sick Children in Singapore', 'Support children battling serious illnesses. Every donation helps cover medical bills and treatment costs for families in need.', 15000.00, 3200.00, '2026-12-31', 'Singapore', 'active', 2),
+  (3, 3, 'Penang Flood Relief', 'Emergency relief for families affected by the Penang floods. Funds go towards food, shelter, and rebuilding homes.', 10000.00, 6750.00, '2026-12-31', 'Penang, Malaysia', 'active', 2),
+  (3, 4, 'Animal Rescue Fund', 'Supporting local animal shelters and rescue operations. Help us provide food, medical care, and shelter for abandoned animals.', 5000.00, 1100.00, '2026-12-31', 'Singapore', 'active', 2),
+  (3, 2, 'Bursary for SIM Students', 'Help underprivileged students at SIM complete their degrees. Funds go directly to tuition and living expenses.', 20000.00, 8000.00, '2026-12-31', 'Singapore', 'active', NULL)
+ON CONFLICT DO NOTHING;
+
+-- SEED: DONATIONS (donor_id=1 = donor@sim.com, donee_id=2 = donee@sim.com)
+-- Multiple donations to FRA 1 to trigger spike detection on first run
+
+INSERT INTO donations (fra_id, donor_id, amount, message, status) VALUES
+  (1, 1, 100.00, 'Hope this helps!', 'completed'),
+  (1, 2, 50.00, NULL, 'completed'),
+  (1, 1, 75.00, 'Stay strong!', 'completed'),
+  (1, 2, 60.00, NULL, 'completed'),
+  (1, 1, 90.00, 'Wishing a speedy recovery', 'completed'),
+  (1, 2, 45.00, NULL, 'completed'),
+  (2, 1, 200.00, 'For the flood victims', 'completed'),
+  (2, 2, 150.00, NULL, 'completed'),
+  (3, 1, 6000.00, NULL, 'flagged'),
+  (4, 2, 300.00, 'Good luck with your studies!', 'completed'),
+  (4, 1, 250.00, NULL, 'completed')
+ON CONFLICT DO NOTHING;
+
+-- SEED: REPORTED CAMPAIGNS
+
+INSERT INTO reported_campaigns (fra_id, reported_by, reason, status) VALUES
+  (3, 1, 'Images appear fake. Profile picture looks like a stock photo.', 'pending'),
+  (2, 2, 'Cannot verify the beneficiary information provided.', 'pending')
+ON CONFLICT DO NOTHING;
+
+-- SEED: FLAGGED USER (violation_count=3 triggers UA-03 violations view)
+-- fund_raiser_id=3 = fundraiser@sim.com
+
+UPDATE users SET violation_count = 3 WHERE email = 'fundraiser@sim.com';
+
+INSERT INTO user_violations (user_id, type, description, actioned_by) VALUES
+  (3, 'misleading_content',  'Campaign description contained unverifiable medical claims.', 4),
+  (3, 'fake_documents',      'Uploaded documents could not be verified by admin.', 4),
+  (3, 'repeated_complaints', 'Multiple donor complaints received about this campaign.', 4)
+ON CONFLICT DO NOTHING;
+
+-- SEED: FAVOURITES (donee@sim.com favourites FRA 1 and FRA 4)
+
+INSERT INTO favorites (user_id, fra_id) VALUES
+  (2, 1),
+  (2, 4)
+ON CONFLICT DO NOTHING;

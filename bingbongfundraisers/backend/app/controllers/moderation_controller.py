@@ -3,6 +3,10 @@ from app.services.moderation_service import ModerationService
 
 class ReportedCampaignController:
     @staticmethod
+    def create_report(fra_id: int, reported_by: int, reason: str):
+        return ModerationService.create_report(fra_id, reported_by, reason)
+
+    @staticmethod
     def get_reported_campaigns():
         return ModerationService.get_reported_campaigns()
 

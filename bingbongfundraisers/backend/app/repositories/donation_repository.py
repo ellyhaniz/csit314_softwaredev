@@ -6,6 +6,24 @@ FLAG_THRESHOLD = 5000.00
 
 class DonationRepository:
     @classmethod
+    def create(cls, data: dict):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO donations (fra_id, donor_id, amount, message, is_anonymous, status)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING *
+                """,
+                (
+                    data["fra_id"], data["donor_id"], data["amount"],
+                    data.get("message"), data.get("is_anonymous", False),
+                    data.get("status", "completed"),
+                ),
+            )
+            return dict(cur.fetchone())
+
+    @classmethod
     def get_by_fra(cls, fra_id: int):
         with get_db() as conn:
             cur = conn.cursor()
@@ -48,6 +66,24 @@ class DonationRepository:
             return [dict(r) for r in cur.fetchall()]
 
     @classmethod
+    def get_large_donations(cls):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT d.*, u.full_name AS donor_name,
+                       f.title AS fra_title
+                FROM donations d
+                JOIN users u ON u.id = d.donor_id
+                JOIN fund_raising_activities f ON f.id = d.fra_id
+                WHERE d.amount >= %s
+                ORDER BY d.created_at DESC
+                """,
+                (FLAG_THRESHOLD,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+
+    @classmethod
     def update_status(cls, donation_id: int, status: str, flagged_reason: str = None):
         with get_db() as conn:
             cur = conn.cursor()
@@ -81,14 +117,13 @@ class DonationRepository:
             return [r["fra_id"] for r in cur.fetchall()]
 
     @classmethod
-    def get_total_donations(cls, period: str):
+    def get_total_donations(cls, start_date: str, end_date: str):
         with get_db() as conn:
             cur = conn.cursor()
-            intervals = {"daily": "1 day", "weekly": "7 days", "monthly": "30 days"}
-            interval = intervals.get(period, "30 days")
             cur.execute(
-                f"SELECT COALESCE(SUM(amount), 0) AS total FROM donations "
-                f"WHERE status = 'completed' AND created_at >= NOW() - INTERVAL '{interval}'"
+                "SELECT COALESCE(SUM(amount), 0) AS total FROM donations "
+                "WHERE status = 'completed' AND DATE(created_at) BETWEEN %s AND %s",
+                (start_date, end_date),
             )
             return float(cur.fetchone()["total"])
 
@@ -98,13 +133,37 @@ class DonationRepository:
             cur = conn.cursor()
             cur.execute(
                 """
-                SELECT DISTINCT u.id, u.full_name, u.email, d.is_anonymous,
-                       d.amount, d.message, d.created_at
+                SELECT DISTINCT ON (d.donor_id)
+                    d.donor_id,
+                    CASE WHEN d.is_anonymous THEN 'Anonymous' ELSE u.full_name END AS donor_name,
+                    d.amount, d.created_at, d.is_anonymous,
+                    CASE WHEN t.id IS NOT NULL THEN TRUE ELSE FALSE END AS thank_you_sent,
+                    t.message AS thank_you_message
+                FROM donations d
+                JOIN users u ON u.id = d.donor_id
+                LEFT JOIN thank_you_messages t ON t.fra_id = d.fra_id AND t.donor_id = d.donor_id
+                WHERE d.fra_id = %s AND d.status = 'completed'
+                ORDER BY d.donor_id, d.created_at DESC
+                """,
+                (fra_id,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+
+    @classmethod
+    def get_recent_by_fra(cls, fra_id: int, limit: int = 6):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT
+                    CASE WHEN d.is_anonymous THEN 'Anonymous' ELSE u.full_name END AS donor_name,
+                    d.amount, d.created_at
                 FROM donations d
                 JOIN users u ON u.id = d.donor_id
                 WHERE d.fra_id = %s AND d.status = 'completed'
                 ORDER BY d.created_at DESC
+                LIMIT %s
                 """,
-                (fra_id,),
+                (fra_id, limit),
             )
             return [dict(r) for r in cur.fetchall()]

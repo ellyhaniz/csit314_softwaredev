@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from app.repositories.campaign_update_repository import CampaignUpdateRepository
 from app.repositories.donation_repository import DonationRepository
 from app.repositories.fra_repository import FRARepository
+from app.repositories.user_repository import UserRepository
 
 
 class FRAService:
@@ -16,6 +17,12 @@ class FRAService:
             raise HTTPException(status_code=400, detail="End date must be in the future")
         if data["target_amount"] <= 0:
             raise HTTPException(status_code=400, detail="Target amount must be positive")
+        donee_email = data.pop("donee_email", None)
+        if donee_email:
+            donee = UserRepository.get_by_email(donee_email)
+            if not donee or donee["user_type"] != "donee":
+                raise HTTPException(status_code=400, detail="No donee account found with that email")
+            data["donee_id"] = donee["id"]
         return FRARepository.create(data)
 
     @staticmethod
@@ -24,6 +31,10 @@ class FRAService:
         if not fra:
             raise HTTPException(status_code=404, detail="FRA not found")
         return fra
+
+    @staticmethod
+    def get_by_fund_raiser(fund_raiser_id: int):
+        return FRARepository.get_by_fund_raiser_id(fund_raiser_id)
 
     # FR-02: End Date / Auto-Close
     @staticmethod
@@ -101,6 +112,7 @@ class FRAService:
         days_remaining = max((end - today).days, 0)
 
         donor_count = DonationRepository.get_count_by_fra(fra_id)
+        recent_donations = DonationRepository.get_recent_by_fra(fra_id, limit=6)
 
         return {
             "fra_id": fra_id,
@@ -111,4 +123,5 @@ class FRAService:
             "days_remaining": days_remaining,
             "donor_count": donor_count,
             "goal_reached": percentage >= 100,
+            "recent_donations": recent_donations,
         }

@@ -21,5 +21,4 @@ class FavouriteService:
 
     @staticmethod
     def get_favourites(user_id: int):
-        favourites = FavouriteRepository.get_by_user(user_id)
-        return {"user_id": user_id, "count": len(favourites), "favourites": favourites}
+        return FavouriteRepository.get_by_user(user_id)

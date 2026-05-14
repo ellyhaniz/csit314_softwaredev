@@ -13,6 +13,12 @@ from app.controllers.moderation_controller import (
 router = APIRouter(prefix="/api/moderation", tags=["Moderation"])
 
 
+class CreateReportRequest(BaseModel):
+    fra_id: int
+    reported_by: int
+    reason: str
+
+
 class ActionReportRequest(BaseModel):
     action: str
     reviewed_by: int
@@ -35,6 +41,11 @@ class CheckThresholdRequest(BaseModel):
 
 
 # PM-03: Reported Campaigns
+@router.post("/reported", summary="PM-03: Submit Campaign Report")
+def create_report(body: CreateReportRequest):
+    return ReportedCampaignController.create_report(body.fra_id, body.reported_by, body.reason)
+
+
 @router.get("/reported", summary="PM-03: Get Reported Campaigns")
 def get_reported_campaigns():
     return ReportedCampaignController.get_reported_campaigns()

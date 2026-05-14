@@ -9,14 +9,15 @@ router = APIRouter(prefix="/api/reports", tags=["Platform Reports"])
 
 
 class GenerateReportRequest(BaseModel):
-    period: str
+    start_date: str
+    end_date: str
     generated_by: Optional[int] = None
 
 
-# PM-01: Generate Report
+# PM-01: Generate Platform Activity Report
 @router.post("", summary="PM-01: Generate Platform Activity Report")
 def generate_report(body: GenerateReportRequest):
-    return GenerateReportController.generate_report(body.period, body.generated_by)
+    return GenerateReportController.generate_report(body.start_date, body.end_date, body.generated_by)
 
 
 @router.get("/{report_id}", summary="PM-01: Get Report")

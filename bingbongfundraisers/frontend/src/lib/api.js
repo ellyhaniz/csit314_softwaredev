@@ -17,11 +17,17 @@ export const loginUser = (email, password) =>
 export const registerUser = (data) =>
   request('/api/auth/register', { method: 'POST', body: JSON.stringify(data) });
 
+// Donations
+export const donateToCampaign = (data) =>
+  request('/api/donations', { method: 'POST', body: JSON.stringify(data) });
+
 // FRA
 export const createFRA = (data) =>
   request('/api/fra', { method: 'POST', body: JSON.stringify(data) });
 
 export const getFRA = (fraId) => request(`/api/fra/${fraId}`);
+
+export const getMyFRAs = (fundraiserId) => request(`/api/fra/fundraiser/${fundraiserId}`);
 
 export const checkExpiredFRAs = () =>
   request('/api/fra/check-expired', { method: 'POST' });
@@ -40,11 +46,14 @@ export const searchFRAs = (params) => {
   const q = new URLSearchParams(
     Object.fromEntries(Object.entries(params).filter(([, v]) => v))
   );
-  return request(`/api/search?${q}`);
+  return request(`/api/search?${q}`).then((data) =>
+    Array.isArray(data) ? data : (data?.results ?? [])
+  );
 };
 
 export const searchMatch = (query, donorId) =>
-  request(`/api/search/match?query=${encodeURIComponent(query)}&donor_id=${donorId}`);
+  request(`/api/search/match?query=${encodeURIComponent(query)}&donor_id=${donorId}`)
+    .then((data) => Array.isArray(data) ? data : (data?.results ?? []));
 
 export const getTrending = () => request('/api/recommendations/trending');
 
@@ -79,15 +88,23 @@ export const deleteCategory = (catId) =>
   request(`/api/categories/${catId}`, { method: 'DELETE' });
 
 // Reports
-export const generateReport = (period, generatedBy) =>
+export const generateReport = (startDate, endDate, generatedBy) =>
   request('/api/reports', {
     method: 'POST',
-    body: JSON.stringify({ period, generated_by: generatedBy }),
+    body: JSON.stringify({ start_date: startDate, end_date: endDate, generated_by: generatedBy }),
   });
 
 export const getReport = (reportId) => request(`/api/reports/${reportId}`);
 
+// Notifications
+export const getNotifications = (userId) => request(`/api/notifications/${userId}`);
+export const markAllRead = (userId) =>
+  request(`/api/notifications/${userId}/read-all`, { method: 'POST' });
+
 // Moderation
+export const reportCampaign = (data) =>
+  request('/api/moderation/reported', { method: 'POST', body: JSON.stringify(data) });
+
 export const getReportedCampaigns = () => request('/api/moderation/reported');
 
 export const actionReport = (reportId, data) =>
@@ -114,6 +131,9 @@ export const reviewDonation = (donationId, decision) =>
     method: 'POST',
     body: JSON.stringify({ decision }),
   });
+
+export const monitorSpikes = () =>
+  request('/api/moderation/spikes/monitor', { method: 'POST' });
 
 export const getSpikeAlerts = () => request('/api/moderation/spikes');
 
