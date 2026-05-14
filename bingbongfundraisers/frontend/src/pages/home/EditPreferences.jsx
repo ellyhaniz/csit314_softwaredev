@@ -59,7 +59,7 @@ export default function EditPreferences() {
         </div>
 
         <p className="text-xs text-gray-400 mb-6">
-          {selected.size === 0 ? 'None selected — you'll see trending campaigns instead' : `${selected.size} selected`}
+          {selected.size === 0 ? "None selected — you'll see trending campaigns instead" : `${selected.size} selected`}
         </p>
 
         {loading ? (
