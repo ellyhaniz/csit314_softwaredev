@@ -115,13 +115,37 @@ class DonationRepository:
             cur = conn.cursor()
             cur.execute(
                 """
-                SELECT DISTINCT u.id, u.full_name, u.email, d.is_anonymous,
-                       d.amount, d.message, d.created_at
+                SELECT DISTINCT ON (d.donor_id)
+                    d.donor_id,
+                    CASE WHEN d.is_anonymous THEN 'Anonymous' ELSE u.full_name END AS donor_name,
+                    d.amount, d.created_at, d.is_anonymous,
+                    CASE WHEN t.id IS NOT NULL THEN TRUE ELSE FALSE END AS thank_you_sent,
+                    t.message AS thank_you_message
+                FROM donations d
+                JOIN users u ON u.id = d.donor_id
+                LEFT JOIN thank_you_messages t ON t.fra_id = d.fra_id AND t.donor_id = d.donor_id
+                WHERE d.fra_id = %s AND d.status = 'completed'
+                ORDER BY d.donor_id, d.created_at DESC
+                """,
+                (fra_id,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+
+    @classmethod
+    def get_recent_by_fra(cls, fra_id: int, limit: int = 6):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT
+                    CASE WHEN d.is_anonymous THEN 'Anonymous' ELSE u.full_name END AS donor_name,
+                    d.amount, d.created_at
                 FROM donations d
                 JOIN users u ON u.id = d.donor_id
                 WHERE d.fra_id = %s AND d.status = 'completed'
                 ORDER BY d.created_at DESC
+                LIMIT %s
                 """,
-                (fra_id,),
+                (fra_id, limit),
             )
             return [dict(r) for r in cur.fetchall()]

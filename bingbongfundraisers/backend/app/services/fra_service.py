@@ -105,6 +105,7 @@ class FRAService:
         days_remaining = max((end - today).days, 0)
 
         donor_count = DonationRepository.get_count_by_fra(fra_id)
+        recent_donations = DonationRepository.get_recent_by_fra(fra_id, limit=6)
 
         return {
             "fra_id": fra_id,
@@ -115,4 +116,5 @@ class FRAService:
             "days_remaining": days_remaining,
             "donor_count": donor_count,
             "goal_reached": percentage >= 100,
+            "recent_donations": recent_donations,
         }
