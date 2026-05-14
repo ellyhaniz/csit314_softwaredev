@@ -66,6 +66,24 @@ class DonationRepository:
             return [dict(r) for r in cur.fetchall()]
 
     @classmethod
+    def get_large_donations(cls):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT d.*, u.full_name AS donor_name,
+                       f.title AS fra_title
+                FROM donations d
+                JOIN users u ON u.id = d.donor_id
+                JOIN fund_raising_activities f ON f.id = d.fra_id
+                WHERE d.amount >= %s
+                ORDER BY d.created_at DESC
+                """,
+                (FLAG_THRESHOLD,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+
+    @classmethod
     def update_status(cls, donation_id: int, status: str, flagged_reason: str = None):
         with get_db() as conn:
             cur = conn.cursor()

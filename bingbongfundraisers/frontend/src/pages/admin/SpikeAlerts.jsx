@@ -146,17 +146,17 @@ export default function SpikeAlerts() {
                     {!spike.dismissed && spike.status !== 'dismissed' && (
                       <div className="flex gap-2 shrink-0">
                         <button
-                          onClick={() => window.open(`/fra/${spike.fra_id}`, '_blank')}
+                          onClick={() => window.open(`/fra/${spike.fra_id || spike.id}`, '_blank')}
                           className="text-xs border border-gray-200 px-3 py-1.5 rounded hover:border-gray-400 transition-colors text-gray-600"
                         >
                           Investigate
                         </button>
                         <button
-                          onClick={() => handleDismiss(spike.fra_id)}
-                          disabled={dismissing === spike.fra_id}
+                          onClick={() => handleDismiss(spike.fra_id || spike.id)}
+                          disabled={dismissing === (spike.fra_id || spike.id)}
                           className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded hover:bg-gray-700 transition-colors disabled:opacity-60"
                         >
-                          {dismissing === spike.fra_id ? 'Dismissing…' : 'Dismiss'}
+                          {dismissing === (spike.fra_id || spike.id) ? 'Dismissing…' : 'Dismiss'}
                         </button>
                       </div>
                     )}
