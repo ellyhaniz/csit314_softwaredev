@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/fra", tags=["Fund Raising Activities"])
 
 class CreateFRARequest(BaseModel):
     fund_raiser_id: int
-    category_id: int
+    category_id: Optional[int] = None
     title: str
     description: Optional[str] = None
     target_amount: float
@@ -35,6 +35,12 @@ class PostUpdateRequest(BaseModel):
 @router.post("", summary="FR-01: Create Fund Raising Activity")
 def create_fra(body: CreateFRARequest):
     return CreateFRAController.create_fra(body.model_dump())
+
+
+# FR: Get all FRAs belonging to a fundraiser (must be before /{fra_id})
+@router.get("/fundraiser/{fund_raiser_id}", summary="FR: Get FRAs by Fundraiser")
+def get_by_fundraiser(fund_raiser_id: int):
+    return CreateFRAController.get_by_fund_raiser(fund_raiser_id)
 
 
 # DN-01 / DO-01: Get FRA detail

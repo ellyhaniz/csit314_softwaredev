@@ -23,6 +23,8 @@ export const createFRA = (data) =>
 
 export const getFRA = (fraId) => request(`/api/fra/${fraId}`);
 
+export const getMyFRAs = (fundraiserId) => request(`/api/fra/fundraiser/${fundraiserId}`);
+
 export const checkExpiredFRAs = () =>
   request('/api/fra/check-expired', { method: 'POST' });
 
@@ -40,11 +42,14 @@ export const searchFRAs = (params) => {
   const q = new URLSearchParams(
     Object.fromEntries(Object.entries(params).filter(([, v]) => v))
   );
-  return request(`/api/search?${q}`);
+  return request(`/api/search?${q}`).then((data) =>
+    Array.isArray(data) ? data : (data?.results ?? [])
+  );
 };
 
 export const searchMatch = (query, donorId) =>
-  request(`/api/search/match?query=${encodeURIComponent(query)}&donor_id=${donorId}`);
+  request(`/api/search/match?query=${encodeURIComponent(query)}&donor_id=${donorId}`)
+    .then((data) => Array.isArray(data) ? data : (data?.results ?? []));
 
 export const getTrending = () => request('/api/recommendations/trending');
 

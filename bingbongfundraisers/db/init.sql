@@ -205,3 +205,22 @@ INSERT INTO categories (name, slug) VALUES
   ('Tech & Innovation', 'tech-innovation'),
   ('Other', 'other')
 ON CONFLICT (slug) DO NOTHING;
+
+-- SEED: TEST ACCOUNTS (all roles)
+
+INSERT INTO users (email, password_hash, user_type, full_name, status, violation_count) VALUES
+  ('donee@sim.com',                  encode(sha256('donee'::bytea), 'hex'),                  'donee',                'Donee User',                'active', 0),
+  ('fundraiser@sim.com',             encode(sha256('fundraiser'::bytea), 'hex'),             'fund_raiser',          'Fund Raiser User',          'active', 0),
+  ('admin@sim.com',                  encode(sha256('admin'::bytea), 'hex'),                  'user_admin',           'Admin',                     'active', 0),
+  ('platformmanagement@sim.com',     encode(sha256('platformmanagement'::bytea), 'hex'),     'platform_management',  'Platform Management',       'active', 0)
+ON CONFLICT (email) DO NOTHING;
+
+-- SEED: TEST FUND RAISING ACTIVITIES
+-- fund_raiser_id=2 corresponds to fundraiser@sim.com (second user inserted above)
+
+INSERT INTO fund_raising_activities (fund_raiser_id, category_id, title, description, target_amount, current_amount, end_date, location_text, status) VALUES
+  (2, 1, 'Help Sick Children in Singapore', 'Support children battling serious illnesses. Every donation helps cover medical bills and treatment costs for families in need.', 15000.00, 3200.00, '2026-12-31', 'Singapore', 'active'),
+  (2, 3, 'Penang Flood Relief', 'Emergency relief for families affected by the Penang floods. Funds go towards food, shelter, and rebuilding homes.', 10000.00, 6750.00, '2026-12-31', 'Penang, Malaysia', 'active'),
+  (2, 4, 'Animal Rescue Fund', 'Supporting local animal shelters and rescue operations. Help us provide food, medical care, and shelter for abandoned animals.', 5000.00, 1100.00, '2026-12-31', 'Singapore', 'active'),
+  (2, 2, 'Bursary for SIM Students', 'Help underprivileged students at SIM complete their degrees. Funds go directly to tuition and living expenses.', 20000.00, 8000.00, '2026-12-31', 'Singapore', 'active')
+ON CONFLICT DO NOTHING;

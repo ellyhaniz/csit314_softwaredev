@@ -32,6 +32,14 @@ function RequireAuth({ children, allowedTypes }) {
   return children;
 }
 
+function HomeRoute() {
+  const { user } = useAuth();
+  if (user?.user_type === 'fund_raiser') return <Navigate to="/dashboard" replace />;
+  if (user?.user_type === 'user_admin') return <Navigate to="/admin/violations" replace />;
+  if (user?.user_type === 'platform_management') return <Navigate to="/admin/reports" replace />;
+  return <Home />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -42,12 +50,8 @@ export default function App() {
       <Route path="/fra/:id" element={<CampaignDetail />} />
       <Route path="/search" element={<SearchMatch />} />
 
-      {/* Donee only */}
-      <Route path="/" element={
-        <RequireAuth allowedTypes={['donee']}>
-          <Home />
-        </RequireAuth>
-      } />
+      {/* Public home — redirects logged-in non-donee users to their page */}
+      <Route path="/" element={<HomeRoute />} />
       <Route path="/favourites" element={
         <RequireAuth allowedTypes={['donee']}>
           <Favourites />

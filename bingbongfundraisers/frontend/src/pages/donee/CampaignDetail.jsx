@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getFRA, getProgress, getImpactScore, getCampaignUpdates } from '../../lib/api';
 import Navbar from '../../components/Navbar';
+import FundraiserHeader from '../../components/FundraiserHeader';
 import ProgressBar from '../../components/ProgressBar';
+import { useAuth } from '../../context/AuthContext';
 
 function formatSGD(n) {
   return `S$${Number(n || 0).toLocaleString('en-SG', { minimumFractionDigits: 0 })}`;
@@ -34,6 +36,8 @@ function timeAgo(dateStr) {
 
 export default function CampaignDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const isFundraiser = user?.user_type === 'fund_raiser';
   const [fra, setFra] = useState(null);
   const [progress, setProgress] = useState(null);
   const [impact, setImpact] = useState(null);
@@ -61,7 +65,7 @@ export default function CampaignDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+        {isFundraiser ? <FundraiserHeader /> : <Navbar />}
         <div className="max-w-5xl mx-auto px-6 py-8">
           <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-6" />
           <div className="bg-white border border-gray-200 rounded-lg h-96 animate-pulse" />
@@ -73,18 +77,22 @@ export default function CampaignDetail() {
   if (error || !fra) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+        {isFundraiser ? <FundraiserHeader /> : <Navbar />}
         <div className="max-w-5xl mx-auto px-6 py-8 text-center text-gray-400 py-20">
           <p className="text-lg font-medium">{error || 'Campaign not found'}</p>
-          <Link to="/browse" className="text-indigo-700 text-sm hover:underline mt-2 inline-block">
-            ← Back to Browse
+          <Link
+            to={isFundraiser ? '/dashboard' : '/browse'}
+            className="text-indigo-700 text-sm hover:underline mt-2 inline-block"
+          >
+            {isFundraiser ? '← My campaigns' : '← Back to Browse'}
           </Link>
         </div>
       </div>
     );
   }
 
-  const isClosed = fra.status === 'closed' || fra.status === 'expired';
+  const isClosed = fra.status === 'expired' || fra.status === 'completed' || fra.status === 'cancelled';
+  const imgSrc = localStorage.getItem(`fra_img_${fra.id}`) || null;
   const pct = fra.target_amount > 0
     ? Math.min(100, Math.round((fra.current_amount / fra.target_amount) * 100))
     : 0;
@@ -98,7 +106,7 @@ export default function CampaignDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      {isFundraiser ? <FundraiserHeader /> : <Navbar />}
 
       {isClosed && (
         <div className="bg-gray-900 text-white px-6 py-3">
@@ -115,7 +123,12 @@ export default function CampaignDetail() {
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-          <Link to="/browse" className="hover:text-gray-900 transition-colors">← Browse</Link>
+          <Link
+            to={isFundraiser ? '/dashboard' : '/browse'}
+            className="hover:text-gray-900 transition-colors"
+          >
+            {isFundraiser ? '← My campaigns' : '← Browse'}
+          </Link>
           <span>/</span>
           <span className="text-gray-900 truncate">{fra.title}</span>
         </div>
@@ -123,7 +136,7 @@ export default function CampaignDetail() {
         <h1 className="text-2xl font-bold text-gray-900 mb-6">{fra.title}</h1>
 
         {isClosed ? (
-          <ClosedView fra={fra} pct={pct} donorCount={donorCount} updates={updates} />
+          <ClosedView fra={fra} pct={pct} donorCount={donorCount} updates={updates} imgSrc={imgSrc} />
         ) : (
           <ActiveView
             fra={fra}
@@ -133,6 +146,7 @@ export default function CampaignDetail() {
             impactScore={impactScore}
             donors={donors}
             updates={updates}
+            imgSrc={imgSrc}
           />
         )}
       </div>
@@ -140,11 +154,15 @@ export default function CampaignDetail() {
   );
 }
 
-function ClosedView({ fra, pct, donorCount, updates }) {
+function ClosedView({ fra, pct, donorCount, updates, imgSrc }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <div className="relative bg-gray-200 rounded-lg h-72 flex items-center justify-center mb-4">
+        <div className="relative rounded-lg h-72 overflow-hidden mb-4">
+          {imgSrc
+            ? <img src={imgSrc} alt={fra.title} className="w-full h-full object-cover" />
+            : <div className="w-full h-full bg-gray-200" />
+          }
           <span className="absolute inset-0 bg-gray-900 bg-opacity-60 rounded-lg flex flex-col items-center justify-center">
             <span className="text-white font-bold text-lg tracking-widest">— CLOSED —</span>
             <span className="text-white text-2xl font-bold mt-2">
@@ -189,7 +207,7 @@ function ClosedView({ fra, pct, donorCount, updates }) {
   );
 }
 
-function ActiveView({ fra, pct, donorCount, avgDonation, impactScore, donors, updates }) {
+function ActiveView({ fra, pct, donorCount, avgDonation, impactScore, donors, updates, imgSrc }) {
   return (
     <div className="space-y-6">
       <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -237,8 +255,13 @@ function ActiveView({ fra, pct, donorCount, avgDonation, impactScore, donors, up
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-sm font-medium text-gray-900 mb-3">Campaign image</p>
-          <div className="bg-gray-100 rounded-lg h-48 flex items-center justify-center">
-            <span className="text-gray-400 text-xs">Image placeholder</span>
+          <div className="rounded-lg h-48 overflow-hidden bg-gray-100">
+            {imgSrc
+              ? <img src={imgSrc} alt={fra.title} className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-gray-400 text-xs">No image uploaded</span>
+                </div>
+            }
           </div>
         </div>
 

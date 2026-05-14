@@ -17,7 +17,7 @@ export default function Categories() {
   function load() {
     setLoading(true);
     getCategories()
-      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .then((data) => setCategories(Array.isArray(data) ? data : data?.categories ?? []))
       .catch(() => setCategories([]))
       .finally(() => setLoading(false));
   }

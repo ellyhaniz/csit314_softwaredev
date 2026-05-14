@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getFRA, getDonorsForFRA, sendThankYou } from '../../lib/api';
-import Navbar from '../../components/Navbar';
+import FundraiserHeader from '../../components/FundraiserHeader';
 import { useAuth } from '../../context/AuthContext';
 
 function formatSGD(n) {
@@ -101,7 +101,7 @@ export default function ThankDonors() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+        <FundraiserHeader />
         <div className="max-w-5xl mx-auto px-6 py-8">
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -115,7 +115,7 @@ export default function ThankDonors() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <FundraiserHeader />
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
           <Link to="/dashboard" className="hover:text-gray-900 transition-colors">← My campaigns</Link>
