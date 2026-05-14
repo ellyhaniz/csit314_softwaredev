@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.repositories.donation_repository import DonationRepository
+from app.repositories.donation_repository import DonationRepository, FLAG_THRESHOLD
 from app.repositories.fra_repository import FRARepository
 
 router = APIRouter(prefix="/api/donations", tags=["donations"])
@@ -26,7 +26,7 @@ def create_donation(request: DonationRequest):
     if fra["status"] != "active":
         raise HTTPException(status_code=400, detail="Campaign is no longer accepting donations")
 
-    status = "flagged" if request.amount >= DonationRepository.FLAG_THRESHOLD else "completed"
+    status = "flagged" if request.amount >= FLAG_THRESHOLD else "completed"
 
     donation = DonationRepository.create({
         "fra_id": request.fra_id,
