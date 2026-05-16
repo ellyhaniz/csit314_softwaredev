@@ -114,6 +114,15 @@ class FRARepository:
             return dict(row) if row else None
 
     @classmethod
+    def increment_view_count(cls, fra_id: int):
+        with get_db() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE fund_raising_activities SET view_count = view_count + 1 WHERE id = %s",
+                (fra_id,),
+            )
+
+    @classmethod
     def increment_shortlist(cls, fra_id: int):
         with get_db() as conn:
             cur = conn.cursor()
