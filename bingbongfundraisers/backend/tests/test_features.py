@@ -534,8 +534,9 @@ class TestImpactScore:
         from app.services.fra_service import FRAService
         result = FRAService.calculate_and_update_score(fra_id=1)
 
+        # funding=1.0 (50% funded * 2.0) + donors=1.0 (10/10) + views=0.5 (50/100) + updates=0.5 (3/5 capped)
         assert result["sufficient_data"] is True
-        assert result["impact_score"] > 0
+        assert result["impact_score"] == 3.0
 
 
 # ---------------------------------------------------------------------------
