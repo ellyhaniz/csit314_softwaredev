@@ -122,18 +122,35 @@ class TestExpiredCampaign:
 # ---------------------------------------------------------------------------
 
 class TestPostCampaignUpdate:
+    @patch("app.services.fra_service.FRAService.calculate_and_update_score")
     @patch("app.repositories.campaign_update_repository.CampaignUpdateRepository.save")
     @patch("app.repositories.fra_repository.FRARepository.get_by_id")
-    def test_post_update_saves_content(self, mock_get_fra, mock_save):
+    def test_post_update_saves_content(self, mock_get_fra, mock_save, mock_calc_score):
         """A fundraiser posting an update should persist it to the campaign."""
         mock_get_fra.return_value = make_fra()
         mock_save.return_value = {"id": 1, "title": "Progress!", "content": "We hit 50%"}
+        mock_calc_score.return_value = {"fra_id": 1, "impact_score": 0.1, "sufficient_data": True}
 
         from app.services.fra_service import FRAService
         result = FRAService.post_update(fra_id=1, title="Progress!", content="We hit 50%")
 
         mock_save.assert_called_once_with(1, "Progress!", "We hit 50%")
+        mock_calc_score.assert_called_once_with(1)
         assert result["title"] == "Progress!"
+
+    @patch("app.services.fra_service.FRAService.calculate_and_update_score")
+    @patch("app.repositories.campaign_update_repository.CampaignUpdateRepository.save")
+    @patch("app.repositories.fra_repository.FRARepository.get_by_id")
+    def test_post_update_triggers_impact_score_recalculation(self, mock_get_fra, mock_save, mock_calc_score):
+        """Posting a campaign update should trigger impact score recalculation."""
+        mock_get_fra.return_value = make_fra()
+        mock_save.return_value = {"id": 1, "title": "Milestone", "content": "Goal reached!"}
+        mock_calc_score.return_value = {"fra_id": 1, "impact_score": 0.2, "sufficient_data": True}
+
+        from app.services.fra_service import FRAService
+        FRAService.post_update(fra_id=1, title="Milestone", content="Goal reached!")
+
+        mock_calc_score.assert_called_once_with(1)
 
     @patch("app.repositories.fra_repository.FRARepository.get_by_id")
     def test_post_update_empty_content_rejected(self, mock_get_fra):
@@ -410,13 +427,15 @@ class TestRecommendations:
 # ---------------------------------------------------------------------------
 
 class TestDonation:
+    @patch("app.services.fra_service.FRAService.calculate_and_update_score")
     @patch("app.repositories.fra_repository.FRARepository.get_by_id")
     @patch("app.repositories.fra_repository.FRARepository.update_current_amount")
     @patch("app.repositories.donation_repository.DonationRepository.create")
-    def test_normal_donation_is_completed(self, mock_create, mock_update, mock_get_fra):
+    def test_normal_donation_is_completed(self, mock_create, mock_update, mock_get_fra, mock_calc_score):
         """Donation below S$5,000 threshold should have status 'completed'."""
         mock_get_fra.return_value = make_fra()
         mock_create.return_value = make_donation(amount=100.0, status="completed")
+        mock_calc_score.return_value = {"fra_id": 1, "impact_score": 0.15, "sufficient_data": True}
 
         from app.services.donation_service import DonationService
         result = DonationService.create_donation({
@@ -427,6 +446,25 @@ class TestDonation:
         assert result["flagged"] is False
         assert result["donation"]["status"] == "completed"
         mock_update.assert_called_once_with(1, 100.0)
+        mock_calc_score.assert_called_once_with(1)
+
+    @patch("app.services.fra_service.FRAService.calculate_and_update_score")
+    @patch("app.repositories.fra_repository.FRARepository.get_by_id")
+    @patch("app.repositories.fra_repository.FRARepository.update_current_amount")
+    @patch("app.repositories.donation_repository.DonationRepository.create")
+    def test_donation_triggers_impact_score_recalculation(self, mock_create, mock_update, mock_get_fra, mock_calc_score):
+        """A completed donation should trigger impact score recalculation."""
+        mock_get_fra.return_value = make_fra()
+        mock_create.return_value = make_donation(amount=100.0, status="completed")
+        mock_calc_score.return_value = {"fra_id": 1, "impact_score": 0.15, "sufficient_data": True}
+
+        from app.services.donation_service import DonationService
+        DonationService.create_donation({
+            "fra_id": 1, "donor_id": 1, "amount": 100.0,
+            "message": None, "is_anonymous": False,
+        })
+
+        mock_calc_score.assert_called_once_with(1)
 
     @patch("app.repositories.fra_repository.FRARepository.get_by_id")
     @patch("app.repositories.fra_repository.FRARepository.update_current_amount")
