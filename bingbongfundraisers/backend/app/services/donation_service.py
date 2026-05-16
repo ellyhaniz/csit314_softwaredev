@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from app.repositories.donation_repository import DonationRepository, FLAG_THRESHOLD
 from app.repositories.fra_repository import FRARepository
+from app.services.fra_service import FRAService
 
 
 class DonationService:
@@ -29,6 +30,7 @@ class DonationService:
 
         if status == "completed":
             FRARepository.update_current_amount(data["fra_id"], data["amount"])
+            FRAService.calculate_and_update_score(data["fra_id"])
 
         return {
             "message": "Donation successful",

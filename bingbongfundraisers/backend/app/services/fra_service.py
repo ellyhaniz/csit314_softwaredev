@@ -30,6 +30,7 @@ class FRAService:
         fra = FRARepository.get_by_id(fra_id)
         if not fra:
             raise HTTPException(status_code=404, detail="FRA not found")
+        FRARepository.increment_view_count(fra_id)
         return fra
 
     @staticmethod
@@ -54,7 +55,9 @@ class FRAService:
             raise HTTPException(status_code=404, detail="FRA not found")
         if not content or len(content.strip()) == 0:
             raise HTTPException(status_code=400, detail="Update content cannot be empty")
-        return CampaignUpdateRepository.save(fra_id, title, content)
+        result = CampaignUpdateRepository.save(fra_id, title, content)
+        FRAService.calculate_and_update_score(fra_id)
+        return result
 
     @staticmethod
     def get_updates(fra_id: int):
@@ -66,7 +69,8 @@ class FRAService:
         fra = FRARepository.get_by_id(fra_id)
         if not fra:
             raise HTTPException(status_code=404, detail="FRA not found")
-        return {"fra_id": fra_id, "impact_score": float(fra["impact_score"])}
+        result = FRAService.calculate_and_update_score(fra_id)
+        return {"fra_id": fra_id, "impact_score": result["impact_score"]}
 
     @staticmethod
     def calculate_and_update_score(fra_id: int):
@@ -77,7 +81,7 @@ class FRAService:
         donation_count = DonationRepository.get_count_by_fra(fra_id)
         update_count = CampaignUpdateRepository.get_count_by_fra(fra_id)
 
-        if donation_count == 0 and fra["view_count"] == 0:
+        if donation_count == 0 and fra["view_count"] == 0 and update_count == 0:
             return {"fra_id": fra_id, "impact_score": 0.0, "sufficient_data": False}
 
         target = float(fra["target_amount"])
