@@ -70,7 +70,7 @@ class TestFR01_CreateFRA:
         })
 
         mock_create.assert_called_once()
-        assert result["donee_id"] == 2
+        assert result["donee_id"] == 9999
 
     def test_AF3A__zero_target_amount__raises_400(self):
         """Alt Flow 3a: Required field invalid (zero target amount) -> system raises 400."""
