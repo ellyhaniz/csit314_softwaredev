@@ -9,10 +9,10 @@
 
 | Table | Purpose |
 |---|---|
-| `users` | All user accounts (fund raiser, donee, user admin, platform management) |
+| `users` | All user accounts (fund raiser, donee, donor, user admin, platform management) |
 | `categories` | FRA categories managed by platform |
-| `fund_raising_activities` | Campaigns created by fund raisers |
-| `donations` | Donations made by donees |
+| `fund_raising_activities` | Campaigns created by fund raisers, linked to a donee |
+| `donations` | Donations made by donors |
 | `payment_details` | Saved payment info per user (tokenized) |
 | `favorites` | FRAs shortlisted by donees |
 | `ratings` | Donee rates their donation experience |
@@ -22,18 +22,21 @@
 | `user_violations` | Violation records for flagged users |
 | `user_preferences` | Language, location, category preferences per user |
 | `platform_reports` | Daily/weekly/monthly activity reports |
+| `notifications` | In-app notifications sent to users |
 
 ---
 
 ## Relationships
 
-- One **user** (fund_raiser) → many **fund_raising_activities**
-- One **user** (donee) → many **donations**
+- One **user** (fund_raiser) → many **fund_raising_activities** (via `fund_raiser_id`)
+- One **user** (donee) → many **fund_raising_activities** (via `donee_id`)
+- One **user** (donor) → many **donations**
 - One **user** → many **favorites**
 - One **user** → many **ratings**
 - One **user** → one **user_preferences**
 - One **user** → many **payment_details**
 - One **user** → many **user_violations**
+- One **user** → many **notifications**
 - One **category** → many **fund_raising_activities**
 - One **fund_raising_activity** → many **donations**
 - One **fund_raising_activity** → many **favorites**
@@ -69,6 +72,7 @@ erDiagram
     fund_raising_activities {
         int id PK
         int fund_raiser_id FK
+        int donee_id FK
         int category_id FK
         string title
         text description
@@ -77,11 +81,10 @@ erDiagram
         enum status
         date end_date
         string location_text
-        numeric latitude
-        numeric longitude
         int view_count
         int shortlist_count
         numeric impact_score
+        boolean is_spike_flagged
     }
 
     donations {
@@ -137,55 +140,66 @@ erDiagram
         int id PK
         int fra_id FK
         int reported_by FK
+        int reviewed_by FK
         text reason
         enum status
-        int reviewed_by FK
     }
 
     user_violations {
         int id PK
         int user_id FK
+        int actioned_by FK
         string type
         text description
-        int actioned_by FK
     }
 
     user_preferences {
         int id PK
         int user_id FK
-        int[] preferred_categories
         string preferred_location
         int max_distance_km
     }
 
     platform_reports {
         int id PK
+        int generated_by FK
         enum period
         date report_date
         int new_fras
         numeric total_donations
         int active_users
         int new_users
-        int generated_by FK
     }
 
-    users ||--o{ fund_raising_activities : "creates"
-    users ||--o{ donations : "makes"
-    users ||--o{ favorites : "saves"
-    users ||--o{ ratings : "gives"
-    users ||--|| user_preferences : "has"
-    users ||--o{ payment_details : "stores"
-    users ||--o{ user_violations : "receives"
-    users ||--o{ thank_you_messages : "sends"
-    users ||--o{ reported_campaigns : "reports"
-    users ||--o{ platform_reports : "generates"
+    notifications {
+        int id PK
+        int user_id FK
+        text message
+        boolean is_read
+    }
+
+    users ||--o{ fund_raising_activities : "creates (fund_raiser_id)"
+    users ||--o{ fund_raising_activities : "benefits from (donee_id)"
     categories ||--o{ fund_raising_activities : "classifies"
+    users ||--o{ donations : "makes"
     fund_raising_activities ||--o{ donations : "receives"
+    users ||--o{ payment_details : "stores"
+    users ||--o{ favorites : "saves"
     fund_raising_activities ||--o{ favorites : "saved in"
+    users ||--o{ ratings : "gives"
     fund_raising_activities ||--o{ ratings : "rated by"
     fund_raising_activities ||--o{ campaign_updates : "has"
     fund_raising_activities ||--o{ thank_you_messages : "linked to"
+    users ||--o{ thank_you_messages : "sends (fund_raiser_id)"
+    users ||--o{ thank_you_messages : "receives (donor_id)"
     fund_raising_activities ||--o{ reported_campaigns : "flagged in"
+    users ||--o{ reported_campaigns : "reports (reported_by)"
+    users ||--o{ reported_campaigns : "reviews (reviewed_by)"
+    users ||--o{ user_violations : "receives"
+    users ||--o{ user_violations : "actions (actioned_by)"
+    users ||--|| user_preferences : "has"
+    users ||--o{ platform_reports : "generates"
+    users ||--o{ notifications : "receives"
 ```
 
 ---
@@ -197,6 +211,7 @@ The `users` table handles all user types via the `user_type` column:
 | user_type | Role |
 |---|---|
 | `fund_raiser` | Creates and manages FRAs |
-| `donee` | Searches and donates to FRAs |
+| `donee` | Linked to FRAs as the beneficiary |
+| `donor` | Searches and donates to FRAs |
 | `user_admin` | Reviews violations and reported campaigns |
 | `platform_management` | Manages categories and generates reports |
