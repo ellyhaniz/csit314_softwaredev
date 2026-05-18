@@ -6,7 +6,7 @@ Each class = one use case. Each method = one flow:
   test_PRE__*       Pre-condition enforcement
 """
 
-from unittest.mock import patch, call
+from unittest.mock import patch, MagicMock, call
 import pytest
 
 
@@ -40,6 +40,122 @@ def make_donation(donation_id=1, fra_id=1, donor_id=1, amount=100.0, status="com
         "message": None,
         "is_anonymous": False,
     }
+
+
+# ===========================================================================
+# PR-01: Register New User Account
+# ===========================================================================
+
+def _make_db_mock(fetchone_returns):
+    cur = MagicMock()
+    cur.fetchone.side_effect = fetchone_returns
+    conn = MagicMock()
+    conn.cursor.return_value = cur
+    conn.__enter__ = MagicMock(return_value=conn)
+    conn.__exit__ = MagicMock(return_value=False)
+    return MagicMock(return_value=conn), cur
+
+
+class TestPR01_RegisterNewUser:
+    """Use Case: New user registers with email, password, full name, and role."""
+
+    @patch("app.controllers.auth_controller.get_db")
+    def test_NF__valid_details_unique_email__account_created_and_data_returned(
+        self, mock_get_db
+    ):
+        """Normal Flow: All valid details submitted and email not taken ->
+        user record inserted and id/email/user_type/full_name returned."""
+        mock_get_db, cur = _make_db_mock([
+            None,
+            {"id": 10, "email": "alice@sim.com", "user_type": "donee", "full_name": "Alice"},
+        ])
+        from app.controllers.auth_controller import AuthController
+        with patch("app.controllers.auth_controller.get_db", mock_get_db):
+            result = AuthController.register(
+                email="alice@sim.com", password="secret123",
+                full_name="Alice", phone=None, user_type="donee",
+            )
+        assert result["email"] == "alice@sim.com"
+        assert result["id"] == 10
+
+    @patch("app.controllers.auth_controller.get_db")
+    def test_AF3A__invalid_user_type__raises_400(self, mock_get_db):
+        """Alt Flow 3a: user_type is not one of the allowed roles ->
+        system rejects with 400 before any DB query."""
+        from fastapi import HTTPException
+        from app.controllers.auth_controller import AuthController
+        with pytest.raises(HTTPException) as exc_info:
+            AuthController.register(
+                email="bad@sim.com", password="pass",
+                full_name="Bad", phone=None, user_type="admin",
+            )
+        assert exc_info.value.status_code == 400
+        mock_get_db.assert_not_called()
+
+    @patch("app.controllers.auth_controller.get_db")
+    def test_AF4A__email_already_registered__raises_409(self, mock_get_db):
+        """Alt Flow 4a: Email address is already in the system ->
+        system returns 409 Conflict and does NOT insert a new row."""
+        mock_get_db, cur = _make_db_mock([{"id": 5}])
+        from fastapi import HTTPException
+        from app.controllers.auth_controller import AuthController
+        with patch("app.controllers.auth_controller.get_db", mock_get_db):
+            with pytest.raises(HTTPException) as exc_info:
+                AuthController.register(
+                    email="taken@sim.com", password="pass",
+                    full_name="Taken", phone=None, user_type="donee",
+                )
+        assert exc_info.value.status_code == 409
+        assert cur.execute.call_count == 1
+
+
+# ===========================================================================
+# PR-02: Login to User Account
+# ===========================================================================
+
+class TestPR02_LoginUser:
+    """Use Case: Registered user logs in with email and password."""
+
+    @patch("app.controllers.auth_controller.get_db")
+    def test_NF__correct_credentials__user_data_returned(self, mock_get_db):
+        """Normal Flow: Valid email and password -> system returns
+        id, email, user_type, and full_name."""
+        mock_get_db, _ = _make_db_mock([
+            {"id": 7, "email": "bob@sim.com", "user_type": "fund_raiser",
+             "full_name": "Bob", "status": "active"},
+        ])
+        from app.controllers.auth_controller import AuthController
+        with patch("app.controllers.auth_controller.get_db", mock_get_db):
+            result = AuthController.login(email="bob@sim.com", password="password123")
+        assert result["id"] == 7
+        assert result["user_type"] == "fund_raiser"
+
+    @patch("app.controllers.auth_controller.get_db")
+    def test_AF3A__wrong_password__raises_401(self, mock_get_db):
+        """Alt Flow 3a: Password does not match stored hash ->
+        system returns 401 Unauthorized."""
+        mock_get_db, _ = _make_db_mock([None])
+        from fastapi import HTTPException
+        from app.controllers.auth_controller import AuthController
+        with patch("app.controllers.auth_controller.get_db", mock_get_db):
+            with pytest.raises(HTTPException) as exc_info:
+                AuthController.login(email="bob@sim.com", password="wrongpass")
+        assert exc_info.value.status_code == 401
+
+    @patch("app.controllers.auth_controller.get_db")
+    def test_AF4A__account_suspended__raises_403(self, mock_get_db):
+        """Alt Flow 4a: Correct credentials but account is suspended ->
+        system returns 403 Forbidden."""
+        mock_get_db, _ = _make_db_mock([
+            {"id": 8, "email": "sus@sim.com", "user_type": "donee",
+             "full_name": "Sus", "status": "suspended"},
+        ])
+        from fastapi import HTTPException
+        from app.controllers.auth_controller import AuthController
+        with patch("app.controllers.auth_controller.get_db", mock_get_db):
+            with pytest.raises(HTTPException) as exc_info:
+                AuthController.login(email="sus@sim.com", password="pass")
+        assert exc_info.value.status_code == 403
 
 
 # ===========================================================================
